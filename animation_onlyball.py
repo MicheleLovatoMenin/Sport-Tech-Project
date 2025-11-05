@@ -161,7 +161,7 @@ try:
                 
                 # Calcola l'angolo per guardare la palla (Convertito per Blender)
                 # math.atan2(Y_Blender, X_Blender) - offset 90 gradi
-                angle_z = math.atan2(delta_to_ball_x, delta_to_ball_y) - (math.pi / 2)
+                angle_z = math.atan2(delta_to_ball_x, delta_to_ball_y) + (math.pi / 2)
                 
                 # Applica la rotazione
                 player_obj.rotation_euler.z = angle_z

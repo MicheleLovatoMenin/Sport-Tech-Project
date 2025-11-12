@@ -6,10 +6,11 @@ import os
 # ========================================
 
 # Path dei file FBX scaricati da Mixamo
-PLAYER_RIGGED_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/X Bot.fbx"
-IDLE_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/Idle.fbx"
-WALK_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/Walkfbx"
-RUN_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/Fast Run.fbx"
+PLAYER_RIGGED_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/fbx/X Bot.fbx"
+DRIBBLE_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/fbx/Dribble.fbx"
+WALK_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/fbx/Walk.fbx"
+RUN_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/fbx/Fast_Run_In_Place.fbx"
+IDLE_FBX = r"C:/Users/miklo/Desktop/Sport-Tech-Project/fbx/Idle.fbx"
 
 # Nome del template che verrà creato
 TEMPLATE_NAME = "player_rigged_template"
@@ -116,9 +117,10 @@ print(f"✓ Template posizionato e scalato")
 print("\n--- FASE 2: Import Animazioni ---")
 
 animations = [
-    (IDLE_FBX, "idle"),
+    (RUN_FBX, "run"),
     (WALK_FBX, "walk"),
-    (RUN_FBX, "run")
+    (DRIBBLE_FBX, "dribble"),
+    (IDLE_FBX, "idle")
 ]
 
 imported_actions = []
@@ -208,20 +210,20 @@ for action_name in imported_actions:
 
 print("\n--- TEST: Assegno 'walk' al template ---")
 
-if TEMPLATE_NAME in bpy.data.objects and "walk" in bpy.data.actions:
+if TEMPLATE_NAME in bpy.data.objects and "run" in bpy.data.actions:
     template = bpy.data.objects[TEMPLATE_NAME]
-    walk_action = bpy.data.actions["walk"]
+    run_action = bpy.data.actions["run"]
     
     # Crea animation_data se non esiste
     if not template.animation_data:
         template.animation_data_create()
     
     # Assegna l'action
-    template.animation_data.action = walk_action
-    print(f"✓ Action 'walk' assegnata al template")
+    template.animation_data.action = run_action
+    print(f"✓ Action 'run' assegnata al template")
     print(f"  → Premi SPACE per vedere il personaggio camminare!")
 else:
-    print("✗ Impossibile assegnare walk")
+    print("✗ Impossibile assegnare run")
 
 print("\n" + "=" * 60)
 print("SETUP COMPLETATO!")
@@ -229,6 +231,6 @@ print("=" * 60)
 print(f"\nProssimi step:")
 print(f"1. Seleziona '{TEMPLATE_NAME}' nell'Outliner")
 print(f"2. Vai nell'Action Editor (in basso)")
-print(f"3. Prova a cambiare animazione: idle, walk, run")
+print(f"3. Prova a cambiare animazione: run")
 print(f"4. Premi SPACEBAR per testare")
 print("\nSe tutto funziona, possiamo modificare lo script di animazione!")

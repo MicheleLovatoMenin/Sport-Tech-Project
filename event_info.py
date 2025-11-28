@@ -14,12 +14,12 @@ TARGET_GAME_ID = "0021500333" # <-- ESEMPIO, CAMBIA QUESTO VALORE
 - 0021500115 philadelphia vs toronto
 - 0021500230 new york vs miami
 - 0021500292 chicago vs charlotte
-- 0021500333 indiana vs miami
+- 0021500333 indiana vs miami 
 - 0021500648 new york vs clippers 
   """
 
 # 3. Inserisci qui l'ID dell'evento che vuoi cercare IN QUELLA PARTITA
-TARGET_EVENT_ID = "367" # <-- ESEMPIO, CAMBIA QUESTO VALORE
+TARGET_EVENT_ID = "276" # <-- ESEMPIO, CAMBIA QUESTO VALORE
 
 # --- FINE IMPOSTAZIONI ---
 

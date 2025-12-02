@@ -4,7 +4,7 @@ import json
 import math
 
 # --- IMPOSTAZIONI DA PERSONALIZZARE ---
-JSON_FILE_PATH = r"D:\VS CODE DIRECTORY\PYTHON\SPORT_TECH\nba_tracking_data_tiny.json" 
+JSON_FILE_PATH = r"C:\Users\miklo\Desktop\Sport-Tech-Project\nba_tracking_data_tiny.json" 
 TARGET_EVENT_ID = "273"
 PLAYER_TEMPLATE_NAME = "player_rigged_template"
 PLAYER_SCALE = 0.037 
@@ -29,37 +29,38 @@ BLEND_FRAMES = 5.0          # Numero di frame per sfumare tra le animazioni
 
 # --- TEAM MAPPING (NOVITÀ) ---
 TEAM_MAPPING = {
-    1610612737: {'name': 'ATL', 'color': '#E13A3E'},
-    1610612738: {'name': 'BOS', 'color': '#008348'},
-    1610612751: {'name': 'BKN', 'color': '#061922'},
-    1610612766: {'name': 'CHA', 'color': '#1D1160'},
-    1610612741: {'name': 'CHI', 'color': '#CE1141'},
-    1610612739: {'name': 'CLE', 'color': '#860038'},
-    1610612742: {'name': 'DAL', 'color': '#007DC5'},
-    1610612743: {'name': 'DEN', 'color': '#4D90CD'},
-    1610612765: {'name': 'DET', 'color': '#006BB6'},
-    1610612744: {'name': 'GSW', 'color': '#FDB927'},
-    1610612745: {'name': 'HOU', 'color': '#CE1141'},
-    1610612754: {'name': 'IND', 'color': '#00275D'},
-    1610612746: {'name': 'LAC', 'color': '#ED174C'},
-    1610612747: {'name': 'LAL', 'color': '#552582'},
-    1610612763: {'name': 'MEM', 'color': '#0F586C'},
-    1610612748: {'name': 'MIA', 'color': '#98002E'},
-    1610612749: {'name': 'MIL', 'color': '#00471B'},
-    1610612750: {'name': 'MIN', 'color': '#005083'},
-    1610612740: {'name': 'NOP', 'color': '#002B5C'},
-    1610612752: {'name': 'NYK', 'color': '#006BB6'},
-    1610612760: {'name': 'OKC', 'color': '#007DC3'},
-    1610612753: {'name': 'ORL', 'color': '#007DC5'},
-    1610612755: {'name': 'PHI', 'color': '#006BB6'},
-    1610612756: {'name': 'PHX', 'color': '#1D1160'},
-    1610612757: {'name': 'POR', 'color': '#E03A3E'},
-    1610612758: {'name': 'SAC', 'color': '#724C9F'},
-    1610612759: {'name': 'SAS', 'color': '#BAC3C9'},
-    1610612761: {'name': 'TOR', 'color': '#CE1141'},
-    1610612762: {'name': 'UTA', 'color': '#00471B'},
-    1610612764: {'name': 'WAS', 'color': '#002B5C'},
+    1610612737: {'name': 'ATL', 'color': '#E13A3E', 'color2': '#C8102E'},
+    1610612738: {'name': 'BOS', 'color': '#008348', 'color2': '#BB9753'},
+    1610612751: {'name': 'BKN', 'color': '#061922', 'color2': '#FFFFFF'},
+    1610612766: {'name': 'CHA', 'color': '#007885', 'color2': '#FFFFFF'},
+    1610612741: {'name': 'CHI', 'color': '#CE1141', 'color2': '#000000'},
+    1610612739: {'name': 'CLE', 'color': '#860038', 'color2': '#FDBB30'},
+    1610612742: {'name': 'DAL', 'color': '#007DC5', 'color2': '#00538C'},
+    1610612743: {'name': 'DEN', 'color': "#0C3256", 'color2': '#FDB927'},
+    1610612765: {'name': 'DET', 'color': '#006BB6', 'color2': '#ED174C'},
+    1610612744: {'name': 'GSW', 'color': '#006BB6', 'color2': '#FDB927'},
+    1610612745: {'name': 'HOU', 'color': '#CE1141', 'color2': '#000000'},
+    1610612754: {'name': 'IND', 'color': '#FDBB30', 'color2': '#00275D'},
+    1610612746: {'name': 'LAC', 'color': '#ED174C', 'color2': '#006BB6'},
+    1610612747: {'name': 'LAL', 'color': '#552582', 'color2': '#FDB927'},
+    1610612763: {'name': 'MEM', 'color': '#0F586C', 'color2': "#11C0DF"},
+    1610612748: {'name': 'MIA', 'color': '#98002E', 'color2': '#ffffff'},
+    1610612749: {'name': 'MIL', 'color': '#00471B', 'color2': '#EEE1C6'},
+    1610612750: {'name': 'MIN', 'color': '#005083', 'color2': '#FFFFFF'},
+    1610612740: {'name': 'NOP', 'color': '#002B5C', 'color2': '#B4975A'},
+    1610612752: {'name': 'NYK', 'color': '#F58426', 'color2': '#006BB6'},
+    1610612760: {'name': 'OKC', 'color': '#007DC3', 'color2': '#F05133'},
+    1610612753: {'name': 'ORL', 'color': '#007DC5', 'color2': '#000000'},
+    1610612755: {'name': 'PHI', 'color': '#006BB6', 'color2': '#ED174C'},
+    1610612756: {'name': 'PHX', 'color': '#1D1160', 'color2': '#E56020'},
+    1610612757: {'name': 'POR', 'color': '#E03A3E', 'color2': '#000000'},
+    1610612758: {'name': 'SAC', 'color': '#724C9F', 'color2': '#63727A'},
+    1610612759: {'name': 'SAS', 'color': '#BAC3C9', 'color2': '#000000'},
+    1610612761: {'name': 'TOR', 'color': '#CE1141', 'color2': '#000000'},
+    1610612762: {'name': 'UTA', 'color': '#1D1160', 'color2': '#F9A01B'},
+    1610612764: {'name': 'WAS', 'color': '#002B5C', 'color2': '#E31837'},
 }
+
 
 # --- FINE IMPOSTAZIONI ---
 
@@ -83,34 +84,57 @@ def hex_to_rgb(hex_color):
 
 def create_team_material(team_id, team_mapping):
     """
-    Controlla se un materiale per questo team_id esiste.
-    Se non esiste, lo crea usando TEAM_MAPPING.
-    Restituisce il nome del materiale.
+    Crea i materiali per la superficie ('color') e per i giunti ('color2') di un team.
+    Restituisce un dizionario con i nomi dei materiali.
     """
+    
     # Cerca il team nel mapping
     team_info = team_mapping.get(team_id)
-    
+    result_mats = {}
+
+    # Define parts to create and their corresponding color keys
+    material_parts = {
+        "Surface": 'color',
+        "Joints": 'color2'
+    }
+
+    # Gestione Fallback e Prefissi
     if not team_info:
-        # Fallback se il team_id non è nel nostro dizionario
-        print(f"   ⚠  Team ID {team_id} non trovato nel TEAM_MAPPING. Uso colore grigio di default.")
-        mat_name = f"Team_{team_id}_Material"
-        color_rgba = (0.5, 0.5, 0.5, 1.0) # Grigio
+        team_prefix = f"Team_{team_id}"
+        print(f"   ⚠  Team ID {team_id} non trovato. Uso colore grigio di default.")
     else:
-        # Nome e colore trovati
-        mat_name = f"{team_info['name']}_{team_id}_Material"
-        color_rgba = hex_to_rgb(team_info['color'])
+        team_prefix = team_info['name']
+
+    # Cicla su Surface e Joints per creare i due materiali
+    for part_name, color_key in material_parts.items():
         
-    # Controlla se il materiale esiste già in Blender
-    if mat_name not in bpy.data.materials:
-        # Crea il materiale
-        mat = bpy.data.materials.new(name=mat_name)
-        mat.use_nodes = True
-        bsdf = mat.node_tree.nodes.get("Principled BSDF")
-        if bsdf:
-            bsdf.inputs["Base Color"].default_value = color_rgba
-        print(f"   ✅ Creato materiale: {mat_name} con colore {color_rgba[:3]}")
+        # 1. Determina il colore e il nome del materiale
+        if team_info and color_key in team_info:
+            color_rgba = hex_to_rgb(team_info[color_key])
+        else:
+            # Fallback a grigio se il team ID o la chiave non sono trovati
+            color_rgba = (0.5, 0.5, 0.5, 1.0)
+            
+        mat_name = f"{team_prefix}_{team_id}_{part_name}_Material"
+
+        # 2. Controlla e Crea il Materiale in Blender
+        if mat_name not in bpy.data.materials:
+            mat = bpy.data.materials.new(name=mat_name)
+            mat.use_nodes = True
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            
+            if bsdf:
+                bsdf.inputs["Base Color"].default_value = color_rgba
+                
+                # (Opzionale) Aggiungi un look diverso per i giunti
+                if part_name == "Joints":
+                    bsdf.inputs["Metallic"].default_value = 0.5
+                    
+            print(f"   ✅ Creato materiale: {mat_name}")
+        
+        result_mats[part_name] = mat_name
     
-    return mat_name
+    return result_mats
 
 # =========================================================================
 
@@ -152,7 +176,7 @@ def cleanup_previous_animation():
     
     print("✅ Pulizia completata\n")
 
-def setup_player_simple(template_name, new_name, team_mat_name):
+def setup_player_simple(template_name, new_name, team_mat_names):
     """Duplica il template E ASSEGNA IL MATERIALE"""
     
     if template_name not in bpy.data.objects:
@@ -175,26 +199,43 @@ def setup_player_simple(template_name, new_name, team_mat_name):
     
     armature_obj = None
     applied_to_surface = False
+    applied_to_joints = False
     
-    mat = bpy.data.materials.get(team_mat_name)
-    if not mat:
-        print(f"     ⚠ Materiale '{team_mat_name}' non trovato per l'assegnazione.")
+    surface_mat_name = team_mat_names.get('Surface')
+    joints_mat_name = team_mat_names.get('Joints')
+
+    surface_mat = bpy.data.materials.get(surface_mat_name)
+    joints_mat = bpy.data.materials.get(joints_mat_name)
+
+    if not surface_mat:
+        print(f"     ⚠ Materiale Surface '{surface_mat_name}' non trovato per l'assegnazione.")
+    if not joints_mat:
+        print(f"     ⚠ Materiale Joints '{joints_mat_name}' non trovato per l'assegnazione.")
 
     for obj in [new_obj] + list(new_obj.children_recursive):
         if obj.type == 'ARMATURE' and not armature_obj:
             armature_obj = obj
 
-        if obj.type == 'MESH' and mat:
-            if "surface" in obj.name.lower() or "body" in obj.name.lower():
+        if obj.type == 'MESH':
+            mesh_name = obj.name.lower()
+
+            if ("surface" in mesh_name or "body" in mesh_name) and surface_mat:
                 obj.data.materials.clear()
-                obj.data.materials.append(mat)
-                print(f"     ✅ Assegnato: {team_mat_name} a {obj.name}")
+                obj.data.materials.append(surface_mat)
+                print(f"     ✅ Assegnato: {surface_mat_name} (Color) a {obj.name}")
                 applied_to_surface = True
-            elif "joint" in obj.name.lower():
-                 obj.data.materials.clear() 
+            
+            # Assegna il materiale Joints
+            elif "joint" in mesh_name and joints_mat:
+                obj.data.materials.clear()
+                obj.data.materials.append(joints_mat)
+                print(f"     ✅ Assegnato: {joints_mat_name} (Color2) a {obj.name}")
+                applied_to_joints = True
 
     if not applied_to_surface:
         print(f"     ⚠ Nessuna mesh 'surface' o 'body' trovata per il colore su {new_name}.")
+    if not applied_to_joints:
+        print(f"     ⚠ Nessuna mesh 'joint' trovata per il colore secondario su {new_name}.")
 
     bpy.ops.object.select_all(action='DESELECT')
     

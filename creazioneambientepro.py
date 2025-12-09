@@ -2,10 +2,10 @@ import bpy
 import os
 
 # ===== CONFIGURAZIONE PERCORSI =====
-BASE_PATH = r"C:\Users\miklo\Desktop\Sport-Tech-Project"
+BASE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project"
 
 COURT_FILE = "basketball_court.glb"
-BALL_BLEND_PATH = r"C:\Users\miklo\Desktop\Sport-Tech-Project\basketballball_v31_cycles\basketballball_v3.1_Cycles.blend"
+BALL_BLEND_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project\basketballball_v3.1_Cycles.blend"
 BALL_OBJECT_NAME_IN_BLEND = "bbc_ball_body"
 
 # ===== VALORI DI SCALA E POSIZIONE =====

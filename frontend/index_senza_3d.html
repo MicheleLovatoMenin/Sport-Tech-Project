@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Shot Chart - CSS Geometry</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #050505; }
+
+        /* --- 1. CONFIGURAZIONE CAMPO (Il tuo codice integrato) --- */
+        
+        .court-container {
+            aspect-ratio: 50/47; /* Rapporto ufficiale NBA Half Court */
+            width: 100%;
+            max-width: 666px; /* Leggermente più grande per desktop */
+            position: relative;
+            background-color: #0a0a0a;
+            
+            /* Texture Parquet Procedurale */
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(40,40,40, 0.4), rgba(0,0,0,0.95)), /* Luce spot sul canestro */
+                linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px), /* Righe orizzontali */
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); /* Righe verticali */
+            background-size: 100% 100%, 4% 4%, 4% 4%;
+            
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(0,0,0,0.8);
+            border: 1px solid #222;
+            margin: 0 auto;
+        }
+
+        /* Stile Base Linee Neon */
+        .court-line {
+            position: absolute;
+            border: 2px solid #f97316; /* Arancione Tailwind */
+            box-shadow: 0 0 6px #f97316, inset 0 0 6px rgba(249, 115, 22, 0.2);
+            opacity: 0.9;
+            z-index: 1; /* Sotto i marker */
+            pointer-events: none;
+        }
+
+        /* 1. IL PITTURATO (Rettangolo) */
+        .court-key {
+            position: absolute;
+            width: 32%;        /* 16 ft / 50 ft = 32% */
+            height: 40.43%;    /* 19 ft / 47 ft = 40.43% */
+            left: 34%;         /* (100% - 32%) / 2 = 34% (Perfettamente centrato) */
+            top: 0;            /* Parte dalla linea di fondo */
+            
+            background-color: rgba(249, 115, 22, 0.1);
+            border: 2px solid #f97316;
+            border-top: none;  /* Aperto verso la linea di fondo */
+        }
+
+        /* 2. LA LUNETTA (Semicerchio inferiore) */
+        .court-freethrow-circle {
+            position: absolute;
+            width: 24%;        /* 12 ft / 50 ft = 24% */
+            height: 25.53%;    /* 12 ft / 47 ft = 25.53% */
+            
+            /* CENTRATURA ORIZZONTALE */
+            left: 38%;         /* (100% - 24%) / 2 = 38% */
+            
+            /* POSIZIONAMENTO VERTICALE */
+            top: 27.66%;
+            border-radius: 50%;
+            border: 2px solid #f97316;
+            
+            /* Tagliamo la metà superiore per far vedere solo l'arco verso il centrocampo */
+            clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
+            
+            /* Un trucco per sovrapporre i bordi se usi un riempimento */
+            margin-top: -1px; 
+        }
+        
+        /* Linea tratteggiata superiore della lunetta (Opzionale, per realismo) */
+        .court-freethrow-dashed {
+            position: absolute;
+            width: 24%;
+            height: 25.53%;
+            left: 38%;
+            top: 27.65%;
+            border-radius: 50%;
+            
+            /* 1. Rimuoviamo il bordo standard che non ci piace */
+            border: none;
+            
+            /* 2. Disegniamo il cerchio usando un SVG come sfondo */
+            /* stroke-dasharray='10%2c 15' significa: 10 unità di linea, 15 unità di vuoto */
+            /* stroke-width='1.5' corrisponde circa ai 2px visivi su schermo */
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='50' cy='50' r='49' fill='none' stroke='rgba(249, 115, 22, 0.5)' stroke-width='1.5' stroke-dasharray='10%2c 15' /%3e%3c/svg%3e");
+            
+            /* Manteniamo il clip-path per farne un semicerchio */
+            clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+            z-index: 1;
+        }
+
+        /* 3. ARCO DA 3 PUNTI - FINALE */
+        /* Stile Neon Condiviso (da applicare a curve e rette) */
+        .neon-style {
+            position: absolute;
+            background-color: transparent; /* O riempimento leggero se vuoi */
+            border: 2px solid #f97316;
+            /* Usiamo box-shadow invece di filter per avere l'INSET (il cuore luminoso) */
+            box-shadow: 
+                0 0 5px #f97316,              /* Glow esterno */
+                inset 0 0 5px #f97316;        /* Glow interno (renderà la linea "viva") */
+            opacity: 0.9; /* Uniforma l'intensità */
+        }
+                
+        
+/* 3. ARCO DA 3 PUNTI - MODIFICATO PER GLOW ESTESO */
+        
+        .court-3pt-arc {
+            position: absolute;
+            width: 95%; 
+            padding-bottom: 95%; 
+            
+            /* Posizionamento */
+            left: 2.5%; 
+            top: -39.36%;
+            
+            /* RIMOSSO: Nessun bordo o ombra qui. È solo un contenitore fantasma. */
+            /* RIMOSSO: Il clip-path stretto. Ne usiamo uno largo solo per nascondere la metà superiore del cerchio */
+            clip-path: polygon(0 50%, 100% 50%, 100% 150%, 0 150%);
+            
+            /* Z-INDEX: Assicuriamoci che stia SOPRA le linee rette per evitare conflitti */
+            z-index: 5; 
+            pointer-events: none;
+        }
+
+        /* LIVELLO 1: La Linea Solida (Il Neon Reale) */
+        .court-3pt-arc::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            
+            /* Stile Neon Nitido */
+            border: 3px solid #f97316;
+            
+            /* TAGLIO NETTO: Qui è dove finisce la linea fisica (al 68.4%) */
+            clip-path: polygon(0 68.4%, 100% 68.4%, 100% 130%, 0 130%);
+            
+            z-index: 2;
+        }
+
+
+
+        /* 2. Le Nuove Linee Rette Separate */
+        /* 2.1 Definizione Base */
+        .court-3pt-line-left, .court-3pt-line-right {
+            position: absolute;
+            top: 0;
+            width: 2.5px;
+            height: 29.9%;
+            background-color: #f97316;
+            z-index: 1;
+        }
+
+        /* 2.2 Linea Sinistra */
+        .court-3pt-line-left {
+            left: 5.82%;
+    
+        }
+
+        /* 2.3 Linea Destra */
+        .court-3pt-line-right {
+            right: 5.81%;
+
+        }
+
+        /* 4. TABELLONE E FERRO */
+        .court-backboard {
+            width: 12%;
+            height: 2px;
+            background: #f97316;
+            left: 44%;
+            top: 8.51%; /* 4ft dalla baseline */
+            box-shadow: 0 0 15px rgba(255,255,255,0.6);
+            border: none;
+            z-index: 2;
+        }
+
+        .court-hoop {
+            width: 3%;
+            height: 3.2%; /* Aspect ratio fix */
+            left: 48.5%;
+            top: 9.3%; /* 4.5ft + raggio */
+            border: 2px solid #fff;
+            background-color: rgba(249, 115, 22, 0.1);
+            border-radius: 50%;
+            box-shadow: 0 0 8px #fff;
+            z-index: 2;
+        }
+
+        
+
+        /* 6. LINEA DI CENTROCAMPO (Bottom) */
+        .court-center-line {
+            width: 100%;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            border-bottom: 2px solid #f97316;
+            box-shadow: 0 0 10px #f97316;
+        }
+        
+        .court-center-circle-top {
+            width: 24%;
+            padding-bottom: 12%; /* Semicerchio */
+            left: 38%;
+            bottom: 0;
+            position: absolute;
+            border-top-left-radius: 100px;
+            border-top-right-radius: 100px;
+            border: 2px solid #f97316;
+            border-bottom: none;
+            z-index: 1;
+        }
+
+        /* --- FINE STILI CAMPO --- */
+
+        /* UTILITIES UI */
+        .neon-text {
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.8);
+        }
+        
+        /* Marker Styles */
+        
+        .marker { 
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            z-index: 10; 
+        }
+
+        /* NUOVO COMPORTAMENTO HOVER */
+        .marker:hover { 
+            z-index: 50; 
+            /* LIFT EFFECT: Scala al 150% e si "alza" (ombra più grande) */
+            transform: translate(-50%, -50%) scale(1.5); 
+            /* GLOW EFFECT: Aumenta la luminosità (brightness) e l'ombra arancione */
+            filter: drop-shadow(0 0 8px #f97316) brightness(1.3);
+        }
+
+        .marker.dimmed { 
+            opacity: 0.15; 
+            filter: grayscale(100%); 
+            transform: translate(-50%, -50%) scale(0.8); 
+        }
+
+        /* Animation */
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-entry { animation: fade-in 0.8s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-neutral-950 text-neutral-300 h-screen w-screen overflow-hidden flex flex-col items-center justify-center relative">
+
+    <nav class="absolute top-0 w-full flex justify-between items-center py-6 px-8 z-50 pointer-events-none">
+        <div class="pointer-events-auto flex items-center gap-2 text-orange-500">
+            <i data-lucide="activity" class="w-6 h-6 neon-text"></i>
+            <span class="font-bold tracking-widest text-sm neon-text">SPORT TECH 25/26</S></span>
+        </div>
+        <div class="pointer-events-auto">
+            <button class="hover:text-orange-400 transition"><i data-lucide="menu" class="w-6 h-6"></i></button>
+        </div>
+    </nav>
+
+    <main class="w-full max-w-4xl px-4 flex flex-col items-center animate-entry">
+        
+        <div class="mb-6 text-center z-40">
+            <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-orange-400 to-orange-700 neon-text select-none mb-4">
+                BASKET VIRTUALIZATION
+            </h1>
+            
+            <div class="inline-flex bg-black/80 backdrop-blur border border-orange-500/30 rounded-full p-1 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                <button onclick="filterShots('all')" id="btn-all" class="px-6 py-2 text-xs font-bold rounded-full bg-orange-600 text-white shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all">ALL</button>
+                <button onclick="filterShots('player')" id="btn-player" class="px-6 py-2 text-xs font-bold rounded-full text-neutral-500 hover:text-orange-400 transition-all">LEBRON</button>
+            </div>
+        </div>
+
+        <div id="court-area" class="court-container">
+            
+            <div class="court-line court-key"></div>
+            
+            <div class="court-freethrow-circle"></div> 
+            <div class="court-freethrow-dashed"></div> 
+
+            <div class="court-3pt-line-left"></div>
+            <div class="court-3pt-line-right"></div>
+            <div class="court-3pt-arc"></div>
+            
+            <div class="court-line court-restricted"></div>
+
+            <div class="court-line court-backboard"></div>
+            <div class="court-line court-hoop"></div>
+            
+            <div class="court-line court-center-line"></div>
+            <div class="court-center-circle-top"></div>
+
+            <div id="markers-layer" class="absolute inset-0 w-full h-full z-10"></div>
+        </div>
+        
+        <p class="mt-4 text-neutral-600 text-[10px] font-mono tracking-[0.2em] uppercase">by Michele Lovato Menin and Tommaso Ballarini</p>
+
+    </main>
+
+    <script>
+        // --- LOGICA DATI & GENERAZIONE ---
+        
+        // Genera 50 tiri casuali
+        function generateRandomShots(count) {
+            const shots = [];
+            for (let i = 0; i < count; i++) {
+                // X: 0-50, Y: 0-47
+                const randX = Math.random() * 48 + 1; 
+                const randY = Math.random() * 42 + 2; 
+                
+                // 50% di probabilità di Make
+                const isMake = Math.random() > 0.5;
+                
+                shots.push({
+                    id: i,
+                    x: randX,
+                    y: randY,
+                    result: isMake ? 'make' : 'miss',
+                    player: Math.random() > 0.6 ? 'LeBron James' : 'Other'
+                });
+            }
+            return shots;
+        }
+
+        const shotsData = generateRandomShots(20);
+        const markersLayer = document.getElementById('markers-layer');
+        const btnAll = document.getElementById('btn-all');
+        const btnPlayer = document.getElementById('btn-player');
+
+        function renderShots(filterPlayer = null) {
+            markersLayer.innerHTML = ''; 
+
+            shotsData.forEach(shot => {
+                // Posizionamento su 50x47 grid
+                const leftPos = (shot.x / 50) * 100;
+                const topPos = (shot.y / 47) * 100;
+
+                const el = document.createElement('div');
+                // Nota: aggiungo -translate-x/y-1/2 per centrare il punto esatto
+                el.className = `marker absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer`;
+                el.style.left = `${leftPos}%`;
+                el.style.top = `${topPos}%`;
+
+                // Filtro
+                if (filterPlayer && shot.player !== filterPlayer && filterPlayer !== 'all') {
+                    el.classList.add('dimmed');
+                }
+
+                // Render: Entrambi ARANCIONI, forme diverse
+                if (shot.result === 'make') {
+                    // CIRCONFERENZA VUOTA (Make)
+                    // border-2 o border-4 = spessore linea
+                    // bg-transparent = vuoto dentro
+                    // shadow-... = il glow neon
+                    el.innerHTML = `<div class="w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-orange-500 bg-transparent shadow-[0_0_10px_#f97316]"></div>`;
+                } else {
+                    // X (Miss) - Resta uguale ma rimuovi classi hover se ce ne fossero inline
+                    el.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 md:w-5 md:h-5 drop-shadow-[0_0_8px_#f97316]">
+                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                        </svg>`;
+                }
+
+                el.onclick = () => console.log(`Shot ID: ${shot.id} | ${shot.result}`);
+                markersLayer.appendChild(el);
+            });
+            
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function filterShots(type) {
+            const player = type === 'player' ? 'LeBron James' : 'all';
+            
+            const activeClass = "bg-orange-600 text-white shadow-[0_0_10px_rgba(249,115,22,0.5)]";
+            const inactiveClass = "text-neutral-500 hover:text-orange-400 bg-transparent shadow-none";
+
+            if(type === 'all') {
+                btnAll.className = `px-6 py-2 text-xs font-bold rounded-full transition-all ${activeClass}`;
+                btnPlayer.className = `px-6 py-2 text-xs font-bold rounded-full transition-all ${inactiveClass}`;
+            } else {
+                btnAll.className = `px-6 py-2 text-xs font-bold rounded-full transition-all ${inactiveClass}`;
+                btnPlayer.className = `px-6 py-2 text-xs font-bold rounded-full transition-all ${activeClass}`;
+            }
+
+            renderShots(player);
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            renderShots('all');
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

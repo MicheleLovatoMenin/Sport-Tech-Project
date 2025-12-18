@@ -1,0 +1,83 @@
+[
+    {
+        "game_id": "0021500333",
+        "game_date": "2015-12-11",
+        "event_id": "180",
+        "event_type": 1,
+        "possession_team_id": 1610612748.0,
+        "primary_player_name": "Danny Green",
+        "shooter_player_id": 101123,
+        "shot_frame": 276,
+        "period": 2,
+        "game_clock": "05:47",
+        "shot_clock": 17.42,
+        "shot_location_x": 87.64611,
+        "shot_location_y": 3.01463,
+        "teams": {
+            "home": {
+                "name": "Indiana Pacers",
+                "team_id": 1610612754,
+                "abbreviation": "IND"
+            },
+            "visitor": {
+                "name": "Miami Heat",
+                "team_id": 1610612748,
+                "abbreviation": "MIA"
+            }
+        }
+    },
+        {
+        "game_id": "0021500333",
+        "game_date": "2015-12-11",
+        "event_id": "190",
+        "event_type": 2,
+        "possession_team_id": 1610612748.0,
+        "primary_player_name": "Tommaso Ballarini",
+        "shooter_player_id": 102323,
+        "shot_frame": 276,
+        "period": 2,
+        "game_clock": "05:47",
+        "shot_clock": 17.42,
+        "shot_location_x": 87.64611,
+        "shot_location_y": 2.01463,
+        "teams": {
+            "home": {
+                "name": "Indiana Pacers",
+                "team_id": 1610612754,
+                "abbreviation": "IND"
+            },
+            "visitor": {
+                "name": "Miami Heat",
+                "team_id": 1610612748,
+                "abbreviation": "MIA"
+            }
+        }
+    },
+            {
+        "game_id": "0021500333",
+        "game_date": "2015-12-11",
+        "event_id": "190",
+        "event_type": 2,
+        "possession_team_id": 1610612754,
+        "primary_player_name": "Michele Lovato Menin",
+        "shooter_player_id": 102323,
+        "shot_frame": 276,
+        "period": 2,
+        "game_clock": "05:47",
+        "shot_clock": 17.42,
+        "shot_location_x": 30.64611,
+        "shot_location_y": 20.01463,
+        "teams": {
+            "home": {
+                "name": "Indiana Pacers",
+                "team_id": 1610612754,
+                "abbreviation": "IND"
+            },
+            "visitor": {
+                "name": "Miami Heat",
+                "team_id": 1610612748,
+                "abbreviation": "MIA"
+            }
+        }
+    }
+]

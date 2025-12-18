@@ -36,6 +36,20 @@ BASKET_RIGHT = (88.75, 25.0)
 def calculate_distance_2d(pos1, pos2):
     return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
 
+def format_clock(seconds):
+    if seconds is None: return "00:00"
+    minutes = int(seconds // 60)
+    secs = int(seconds % 60)
+    return f"{minutes:02d}:{secs:02d}"
+
+def get_player_name_by_id(event_data, target_id):
+    # Cerca tra i giocatori home e visitor
+    for team_key in ['home', 'visitor']:
+        for p in event_data.get(team_key, {}).get('players', []):
+            if str(p['playerid']) == str(int(target_id)):
+                return f"{p['firstname']} {p['lastname']}"
+    return "Unknown"
+
 # =========================================================================
 # 🧠 LOGICA DI ANALISI
 # =========================================================================
@@ -140,7 +154,7 @@ def find_shot_release_nearest_teammate(event_data):
             if dist_to_basket >= MIN_3PT_DIST_FEET:
                 print(f"✅ TIRO DA 3 VALIDO! ({dist_to_basket:.2f} ft)")
                 # Restituiamo anche le coordinate x, y
-                return shot_frame_index, shooter_id, closest_player_pos[0], closest_player_pos[1]
+                return shot_frame_index, shooter_id, closest_player_pos[0], closest_player_pos[1], moments[shot_frame_index]
             else:
                 # 2. SCARTO E AVANZAMENTO
                 print(f"🚫 SCARTATO: Distanza insufficiente ({dist_to_basket:.2f} ft). Cerco oltre...")
@@ -177,21 +191,54 @@ if __name__ == "__main__":
             result = find_shot_release_nearest_teammate(target_event)
             
             if result:
-                # --- MODIFICA: Unpacking di 4 valori (frame, id, x, y) ---
-                frame, pid, shot_x, shot_y = result
+                # Unpacking di 5 valori ora
+                frame, pid, shot_x, shot_y, shot_moment = result
                 
+                # 1. Recupero nome dal primary_info (come richiesto)
+                primary_pid = target_event.get('primary_info', {}).get('player_id', 0)
+                primary_name = get_player_name_by_id(target_event, primary_pid)
+
+                # 2. Preparazione dati Team
+                home_team = target_event.get('home', {})
+                visitor_team = target_event.get('visitor', {})
+
+                poss_id = target_event.get('possession_team_id')
+                if poss_id is None:
+                    poss_id = target_event.get('event_info', {}).get('possession_team_id')
+                if poss_id is None:
+                    poss_id = target_event.get('primary_info', {}).get('team_id')
+
                 output = {
-                    "game_id": TARGET_GAME_ID, 
-                    "event_id": TARGET_EVENT_ID, 
-                    "event_type": event_type,  # Aggiunto anche nel JSON
-                    "player_id": pid, 
+                    "game_id": TARGET_GAME_ID,
+                    "game_date": target_event.get('gamedate'),
+                    "event_id": TARGET_EVENT_ID,
+                    "event_type": event_type,
+                    "possession_team_id": poss_id,
+                    "primary_player_name": primary_name,  # Nome del primary_info
+                    "shooter_player_id": pid,            # ID di chi ha tirato davvero
                     "shot_frame": frame,
-                    "shot_location_x": shot_x, # Aggiunto
-                    "shot_location_y": shot_y  # Aggiunto
+                    "period": shot_moment.get('quarter'),
+                    "game_clock": format_clock(shot_moment.get('game_clock')),
+                    "shot_clock": shot_moment.get('shot_clock'),
+                    "shot_location_x": shot_x,
+                    "shot_location_y": shot_y,
+                    "teams": {
+                        "home": {
+                            "name": home_team.get('name'),
+                            "team_id": home_team.get('teamid'),
+                            "abbreviation": home_team.get('abbreviation')
+                        },
+                        "visitor": {
+                            "name": visitor_team.get('name'),
+                            "team_id": visitor_team.get('teamid'),
+                            "abbreviation": visitor_team.get('abbreviation')
+                        }
+                    }
                 }
                 
-                with open(OUTPUT_FILENAME, "w") as f_out: json.dump(output, f_out, indent=4)
-                print(f"✅ Salvato: Player {pid} al frame {frame} in pos ({shot_x:.1f}, {shot_y:.1f})")
+                with open(OUTPUT_FILENAME, "w") as f_out: 
+                    json.dump(output, f_out, indent=4)
+                print(f"✅ Salvato: {primary_name} coinvolto, tiro rilevato per player {pid}")
             else:
                 print("❌ Nessun tiro da 3 valido trovato.")
         else:

@@ -1,6 +1,27 @@
 {
     "game_id": "0021500333",
+    "game_date": "2015-12-11",
     "event_id": "179",
-    "player_id": 101123,
-    "shot_frame": 276
+    "event_type": 4,
+    "possession_team_id": 1610612748.0,
+    "primary_player_name": "Hassan Whiteside",
+    "shooter_player_id": 101123,
+    "shot_frame": 276,
+    "period": 2,
+    "game_clock": "05:47",
+    "shot_clock": 17.42,
+    "shot_location_x": 87.64611,
+    "shot_location_y": 3.01463,
+    "teams": {
+        "home": {
+            "name": "Indiana Pacers",
+            "team_id": 1610612754,
+            "abbreviation": "IND"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
 }

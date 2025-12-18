@@ -5,8 +5,10 @@ import math
 # from collections import deque # RIMOSSO
 
 # --- IMPOSTAZIONI DA PERSONALIZZARE ---
-JSON_FILE_PATH = r"D:\VS CODE DIRECTORY\PYTHON\SPORT_TECH\nba_tracking_data_tiny.json" 
-TARGET_EVENT_ID = "273" 
+JSON_FILE_PATH = r"C:\Users\DISI\Documents\SportTech Students\Basket_Virtualisation\Sport-Tech-Project\nba_tracking_data_tiny.json" 
+
+TARGET_GAME_ID = "0021500292" 
+TARGET_EVENT_ID = "12"  
 
 # --- Soglia di velocità RIMOSSA ---
 # SPEED_THRESHOLD = 0.3
@@ -40,29 +42,34 @@ try:
 
     # --- 1. Carica i dati JSON ---
     print(f"Caricamento dati da {JSON_FILE_PATH}...")
-    print(f"Ricerca di TARGET_EVENT_ID: {TARGET_EVENT_ID}")
+    print(f"Ricerca di GAME_ID: {TARGET_GAME_ID} e EVENT_ID: {TARGET_EVENT_ID}")
 
     event = None
+    target_game_str = str(TARGET_GAME_ID).strip()
+    target_event_str = str(TARGET_EVENT_ID).strip()
     with open(JSON_FILE_PATH, 'r', encoding='utf-8') as f:
         for i, line in enumerate(f):
             try:
                 current_event = json.loads(line)
+                game_id_from_file = str(current_event.get('gameid', '')).strip()
+
+                event_id_from_file = ""
                 if 'event_info' in current_event and \
-                   isinstance(current_event['event_info'], dict) and \
-                       'id' in current_event['event_info']:
+                    isinstance(current_event['event_info'], dict):
+                        event_id_from_file = str(current_event['event_info'].get('id', '')).strip()
 
-                    event_id_from_file = str(current_event['event_info']['id']).strip()
-                    target_id_str = str(TARGET_EVENT_ID).strip()
+                #DOPPIO CONTROLLO: Partita AND Evento
+                if game_id_from_file == target_game_str and event_id_from_file == target_event_str:
+                    event = current_event
+                    print(f"✅ TROVATO! Partita {target_game_str}, Evento {target_event_str} alla riga {i+1}")
+                    break
 
-                    if event_id_from_file == target_id_str:
-                        event = current_event
-                        print(f"✅ Evento {TARGET_EVENT_ID} trovato alla riga {i+1}!")
-                        break
             except (json.JSONDecodeError, KeyError, IndexError):
-                pass
+                continue
 
     if event is None:
-        raise Exception(f"ERRORE: Evento con ID '{TARGET_EVENT_ID}' non trovato nel file.")
+        raise Exception(f"ERRORE: Non è stato trovato l'evento '{target_event_str}' per la partita '{target_game_str}'.")
+
 
     # --- 2. Impostazioni Scena ---
     bpy.context.scene.render.fps = 25

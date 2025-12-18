@@ -7,7 +7,7 @@ import os
 # =========================================================================
 # 🛠️ CONFIGURAZIONE UTENTE
 # =========================================================================
-JSON_FILE_PATH = r"C:\Users\miklo\Desktop\Sport-Tech-Project\nba_tracking_data_tiny.json" #DA CAMBIARE
+JSON_FILE_PATH = r"C:\Users\DISI\Documents\SportTech Students\Basket_Virtualisation\Sport-Tech-Project\nba_tracking_data_tiny.json" #DA CAMBIARE
 
 TARGET_GAME_ID = "0021500333" 
 TARGET_EVENT_ID = "179"       
@@ -19,11 +19,10 @@ FRAME_RATE_FPS = 25.0
 DELTA_TIME = 1.0 / FRAME_RATE_FPS 
 MIN_Z_TRIGGER = 10.5 
 PUSH_ACCEL_THRESHOLD = 15.0 
-MAX_2D_DISTANCE_TO_SHOOTER = 4.0 
-MIN_SHOT_DISTANCE_2D = 13.0  
+MAX_2D_DISTANCE_TO_SHOOTER = 2.5  
 
 # --- FILTRO 3 PUNTI ---
-MIN_3PT_DIST_METERS = 6.70
+MIN_3PT_DIST_METERS = 6.7
 MIN_3PT_DIST_FEET = MIN_3PT_DIST_METERS * 3.28084 # ~22 piedi
 
 # --- COORDINATE CANESTRI FISSI ---
@@ -215,7 +214,7 @@ if __name__ == "__main__":
                     "event_type": event_type,
                     "possession_team_id": poss_id,
                     "primary_player_name": primary_name,  # Nome del primary_info
-                    "shooter_player_id": pid,            # ID di chi ha tirato davvero
+                    "player_id": pid,            # ID di chi ha tirato davvero
                     "shot_frame": frame,
                     "period": shot_moment.get('quarter'),
                     "game_clock": format_clock(shot_moment.get('game_clock')),

@@ -17,11 +17,12 @@ def normalize_coordinates(json_x, json_y):
     - La nostra X diventa: json_y (così 3 resta a sinistra e 47 va a destra)
     """
     COURT_LENGTH = 94
+    COURT_WIDTH = 50
     HALF_COURT = 47
 
     # 1. Gestione Lunghezza (Asse Y nel grafico)
     if json_x > HALF_COURT:
-        # Se è oltre metà campo, ribaltiamo verso il canestro vicino
+        # Se è oltre metà campo, ribaltiamo il lato
         norm_y = COURT_LENGTH - json_x
     else:
         # Se è già nella metà campo vicina, lo teniamo così
@@ -31,7 +32,13 @@ def normalize_coordinates(json_x, json_y):
     # Usiamo json_y direttamente. 
     # Se json_y è piccolo (es. 3), il tiro sarà a sinistra.
     # Se json_y è grande (es. 47), il tiro sarà a destra.
-    norm_x = json_y
+    if json_x > HALF_COURT:
+        # Se è oltre metà campo, ribaltiamo verso il canestro vicino
+        norm_x = json_y
+    else:
+        # Se è già nella metà campo vicina, lo teniamo così
+        norm_x = COURT_WIDTH - json_y
+
     
     return round(norm_x, 2), round(norm_y, 2)
 

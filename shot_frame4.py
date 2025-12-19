@@ -20,6 +20,8 @@ DELTA_TIME = 1.0 / FRAME_RATE_FPS
 MIN_Z_TRIGGER = 10.5 
 PUSH_ACCEL_THRESHOLD = 15.0 
 MAX_2D_DISTANCE_TO_SHOOTER = 4 
+ASSUMED_PLAYER_Z = 6.5
+MAX_3D_DISTANCE_TO_BALL = 3.0
 
 # --- FILTRO 3 PUNTI ---
 MIN_3PT_DIST_METERS = 6.5
@@ -104,14 +106,13 @@ def find_shot_release_nearest_teammate(event_data):
         closest_player_pos = (0, 0) # Placeholder
         dist_to_basket = 0.0
         
+        home_id = event_data.get('home', {}).get('teamid')
+        visitor_id = event_data.get('visitor', {}).get('teamid')
+
         # Cerchiamo indietro dal frame corrente 'i' fino all'inizio
         for j in range(i, 1, -1):
             b_curr = ball_data_history[j]
             b_prev = ball_data_history[j-1] 
-            
-            # AGGIUNGI QUI (attenzione: genera molti log, utile per frame specifici):
-            if b_curr['a_z'] > 5.0: # Logga anche accelerazioni minori per capire il trend
-                print(f"DEBUG: Controllo frame {j}, Accel_Z: {b_curr['a_z']:.2f}")
 
             # Se troviamo un picco di accelerazione (il rilascio)
             if b_curr['a_z'] > PUSH_ACCEL_THRESHOLD:
@@ -120,26 +121,43 @@ def find_shot_release_nearest_teammate(event_data):
                 print(f"🔥 PICCO ACCELERAZIONE trovato al frame {j}: {b_curr['a_z']:.2f}")
                 
                 # Cerchiamo il compagno più vicino alla palla
-                min_dist_player = float('inf')
+                min_dist_3d = float('inf')
                 temp_closest_pos = None
                 temp_closest_id = None
+                temp_side = "Unknown"
 
                 for p in moment_data['player_coordinates']:
-                    if int(p['teamid']) == shooter_team_id:
-                        p_pos = (p['x'], p['y'])
-                        d = calculate_distance_2d(ball_xy, p_pos)
-                        if d < min_dist_player:
-                            min_dist_player = d
-                            temp_closest_pos = p_pos
-                            temp_closest_id = p['playerid']
-                
+                    # Rimosso il filtro: if int(p['teamid']) == shooter_team_id:
+                    
+                    p_pos_2d = (p['x'], p['y'])
+                    dist_2d = calculate_distance_2d(ball_xy, p_pos_2d)
+                    
+                    # Calcolo distanza 3D simulata: sqrt(dist_2d^2 + (z_palla - 6.5)^2)
+                    dist_z = abs(b_prev['pos'][2] - ASSUMED_PLAYER_Z)
+                    dist_3d = math.sqrt(dist_2d**2 + dist_z**2)
+
+                    if dist_3d < min_dist_3d:
+                        min_dist_3d = dist_3d
+                        temp_closest_pos = p_pos_2d
+                        temp_closest_id = p['playerid']
+
+                        # Identificazione lato
+                        p_team_id = int(p['teamid'])
+                        if p_team_id == home_id:
+                            temp_side = "home"
+                        elif p_team_id == visitor_id:
+                            temp_side = "visitor"
+
+                # Debug per capire se è un difensore o attaccante
                 if temp_closest_id:
-                    print(f"   👤 Giocatore più vicino al frame {j}: ID {temp_closest_id} a {min_dist_player:.2f} ft")
+                    # Recuperiamo il nome per il log
+                    p_name = get_player_name_by_id(event_data, temp_closest_id)
+                    print(f"   👤 {temp_side.upper()} | {p_name} (ID: {temp_closest_id}) a {min_dist_3d:.2f} ft")
                 else:
                     print(f"   ⚠️ Nessun compagno trovato vicino alla palla al frame {j}")
 
                 # Se il giocatore è plausibilmente colui che ha tirato
-                if min_dist_player < MAX_2D_DISTANCE_TO_SHOOTER:
+                if min_dist_3d < MAX_2D_DISTANCE_TO_SHOOTER:
                     closest_player_pos = temp_closest_pos
                     
                     # --- MODIFICA LOGICA DISTANZA ---

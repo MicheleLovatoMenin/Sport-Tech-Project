@@ -63,6 +63,42 @@ SPEED_MAP = {
     "celly_lebron": 3.8624
 }
 
+# ... (dopo SPEED_MAP)
+
+# === CONFIGURAZIONE COLORI SQUADRE ===
+TEAM_MAPPING = {
+    1610612737: {'name': 'ATL', 'color': '#E13A3E', 'color2': '#C8102E'},
+    1610612738: {'name': 'BOS', 'color': '#008348', 'color2': '#BB9753'},
+    1610612751: {'name': 'BKN', 'color': '#061922', 'color2': '#FFFFFF'},
+    1610612766: {'name': 'CHA', 'color': '#007885', 'color2': '#FFFFFF'},
+    1610612741: {'name': 'CHI', 'color': '#CE1141', 'color2': '#000000'},
+    1610612739: {'name': 'CLE', 'color': '#860038', 'color2': '#FDBB30'},
+    1610612742: {'name': 'DAL', 'color': '#007DC5', 'color2': '#00538C'},
+    1610612743: {'name': 'DEN', 'color': "#0C3256", 'color2': '#FDB927'},
+    1610612765: {'name': 'DET', 'color': '#006BB6', 'color2': '#ED174C'},
+    1610612744: {'name': 'GSW', 'color': '#006BB6', 'color2': '#FDB927'},
+    1610612745: {'name': 'HOU', 'color': '#CE1141', 'color2': '#000000'},
+    1610612754: {'name': 'IND', 'color': '#FDBB30', 'color2': '#00275D'},
+    1610612746: {'name': 'LAC', 'color': '#ED174C', 'color2': '#006BB6'},
+    1610612747: {'name': 'LAL', 'color': '#552582', 'color2': '#FDB927'},
+    1610612763: {'name': 'MEM', 'color': '#0F586C', 'color2': "#11C0DF"},
+    1610612748: {'name': 'MIA', 'color': '#98002E', 'color2': '#ffffff'},
+    1610612749: {'name': 'MIL', 'color': '#00471B', 'color2': '#EEE1C6'},
+    1610612750: {'name': 'MIN', 'color': '#005083', 'color2': '#FFFFFF'},
+    1610612740: {'name': 'NOP', 'color': '#002B5C', 'color2': '#B4975A'},
+    1610612752: {'name': 'NYK', 'color': '#F58426', 'color2': '#006BB6'},
+    1610612760: {'name': 'OKC', 'color': '#007DC3', 'color2': '#F05133'},
+    1610612753: {'name': 'ORL', 'color': '#007DC5', 'color2': '#000000'},
+    1610612755: {'name': 'PHI', 'color': '#006BB6', 'color2': '#ED174C'},
+    1610612756: {'name': 'PHX', 'color': '#1D1160', 'color2': '#E56020'},
+    1610612757: {'name': 'POR', 'color': '#E03A3E', 'color2': '#000000'},
+    1610612758: {'name': 'SAC', 'color': '#724C9F', 'color2': '#63727A'},
+    1610612759: {'name': 'SAS', 'color': '#BAC3C9', 'color2': '#000000'},
+    1610612761: {'name': 'TOR', 'color': '#CE1141', 'color2': '#000000'},
+    1610612762: {'name': 'UTA', 'color': '#1D1160', 'color2': '#F9A01B'},
+    1610612764: {'name': 'WAS', 'color': '#002B5C', 'color2': '#E31837'},
+}
+
 # =====================================
 
 # Soglie
@@ -216,6 +252,62 @@ def is_moving_backwards(player_pos, prev_player_pos, target_pos):
     move_dy = player_pos[1] - prev_player_pos[1]
     dot_product = (look_dx * move_dx) + (look_dy * move_dy)
     return dot_product < -0.5
+
+def hex_to_rgba(hex_str):
+    """Converte stringa HEX (#RRGGBB) in tupla Blender (R, G, B, 1.0)"""
+    hex_str = hex_str.lstrip('#')
+    return tuple(int(hex_str[i:i+2], 16)/255.0 for i in (0, 2, 4)) + (1.0,)
+
+def apply_team_colors(team_id):
+    """Colora Surface e Joints in base al Team ID"""
+    print(f"🎨 Applicazione colori per Team ID: {team_id}")
+    
+    # 1. Recupera Dati Team (conversione float -> int sicura)
+    try:
+        t_id = int(float(team_id))
+    except:
+        print(f"⚠️ ID Team non valido: {team_id}")
+        return
+
+    team_data = TEAM_MAPPING.get(t_id)
+    if not team_data:
+        print(f"⚠️ Team ID {t_id} non trovato nel mapping. Uso colori default.")
+        return
+
+    print(f"   Squadra trovata: {team_data['name']}")
+
+    # 2. Definisci Target e Colori
+    # Surface -> color (primary)
+    # Joints -> color2 (secondary)
+    targets = [
+        ("Beta_Surface", team_data['color']),
+        ("Beta_Joints", team_data['color2'])
+    ]
+
+    # 3. Applica Materiali
+    for obj_name, hex_color in targets:
+        obj = bpy.data.objects.get(obj_name)
+        if obj:
+            # Crea o recupera materiale
+            if not obj.data.materials:
+                mat = bpy.data.materials.new(name=f"Mat_{team_data['name']}_{obj_name}")
+                obj.data.materials.append(mat)
+            else:
+                mat = obj.data.materials[0]
+                mat.name = f"Mat_{team_data['name']}_{obj_name}" # Rinomina per ordine
+
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+            bsdf = nodes.get("Principled BSDF")
+            
+            if bsdf:
+                rgba = hex_to_rgba(hex_color)
+                bsdf.inputs['Base Color'].default_value = rgba
+                print(f"   ✅ {obj_name} -> {hex_color}")
+            else:
+                print(f"   ❌ Principled BSDF mancante su {obj_name}")
+        else:
+            print(f"   ❌ Oggetto non trovato: {obj_name}")
 
 # ==================== CORE LOGIC ====================
 
@@ -554,6 +646,13 @@ def main():
     
     try:
         metadata = load_metadata()
+
+        poss_team_id = metadata.get('possession_team_id')
+        if poss_team_id is not None:
+            apply_team_colors(poss_team_id)
+        else:
+            print("⚠️ possession_team_id mancante nei metadata")
+
         event = find_event_in_dataset(metadata['game_id'], metadata['event_id'])
         moments, shot_offset = extract_shot_window(event, metadata['shot_frame'])
         p_traj, b_traj = get_trajectories(moments, metadata['player_id'])

@@ -5,10 +5,10 @@ import math
 # from collections import deque # RIMOSSO
 
 # --- IMPOSTAZIONI DA PERSONALIZZARE ---
-JSON_FILE_PATH = r"C:\Users\DISI\Documents\SportTech Students\Basket_Virtualisation\Sport-Tech-Project\nba_tracking_data_tiny.json" 
+JSON_FILE_PATH = r"C:\Users\DISI\Documents\SportTech Students\Basket_Virtualisation\Sport-Tech-Project\nba_tracking_data_tiny.json"
 
-TARGET_GAME_ID = "0021500292" 
-TARGET_EVENT_ID = "12"  
+TARGET_GAME_ID = "0021500333"
+TARGET_EVENT_ID = "202"  
 
 # --- Soglia di velocità RIMOSSA ---
 # SPEED_THRESHOLD = 0.3
@@ -125,7 +125,7 @@ try:
 
     for i, moment in enumerate(event['moments']):
         current_game_clock = moment['game_clock']
-        frame_num = int(round((start_game_clock - current_game_clock) * 25))
+        frame_num = i
         bpy.context.scene.frame_set(frame_num)
 
         if i % 50 == 0: 
@@ -181,10 +181,8 @@ try:
             debug_stampato = True
 
     # --- 6. Imposta la Durata della Scena ---
-    end_game_clock = event['moments'][-1]['game_clock']
     start_frame = 0
-    end_frame = int(round((start_game_clock - end_game_clock) * 25))
-
+    end_frame = len(event['moments']) - 1 # Usa la lunghezza totale della lista
     bpy.context.scene.frame_start = start_frame
     bpy.context.scene.frame_end = end_frame
 

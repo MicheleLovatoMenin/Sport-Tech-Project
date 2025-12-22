@@ -1,27 +1,27 @@
 {
-    "game_id": "0021500333",
-    "game_date": "2015-12-11",
-    "event_id": "179",
-    "event_type": 4,
-    "possession_team_id": 1610612748.0,
-    "primary_player_name": "Hassan Whiteside",
-    "player_id": 101123,
-    "shot_frame": 276,
-    "period": 2,
-    "game_clock": "05:47",
-    "shot_clock": 17.42,
-    "shot_location_x": 87.64611,
-    "shot_location_y": 3.01463,
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "335",
+    "event_type": 1,
+    "possession_team_id": 1610612755,
+    "primary_player_name": "Hollis Thompson",
+    "player_id": 203138,
+    "shot_frame": 463,
+    "period": 3,
+    "game_clock": "05:03",
+    "shot_clock": 10.14,
+    "shot_location_x": 85.85308,
+    "shot_location_y": 47.0801,
     "teams": {
         "home": {
-            "name": "Indiana Pacers",
-            "team_id": 1610612754,
-            "abbreviation": "IND"
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
         },
         "visitor": {
-            "name": "Miami Heat",
-            "team_id": 1610612748,
-            "abbreviation": "MIA"
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
         }
     }
 }

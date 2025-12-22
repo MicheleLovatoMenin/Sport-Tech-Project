@@ -1,16 +1,14 @@
 import json
 import math
-import sys
 import traceback
-import os
 
 # =========================================================================
 # 🛠️ CONFIGURAZIONE UTENTE
 # =========================================================================
-JSON_FILE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project\nba_tracking_data_tiny.json" #DA CAMBIARE
+JSON_FILE_PATH = r"C:\Users\miklo\Desktop\Sport-Tech-Project\nba_tracking_data_tiny.json" #DA CAMBIARE
 
-TARGET_GAME_ID = "0021500333" 
-TARGET_EVENT_ID = "43"       
+TARGET_GAME_ID = "0021500115"
+TARGET_EVENT_ID = "335"       
 
 OUTPUT_FILENAME = "shot_metadata.json" 
 
@@ -19,9 +17,8 @@ FRAME_RATE_FPS = 25.0
 DELTA_TIME = 1.0 / FRAME_RATE_FPS 
 MIN_Z_TRIGGER = 10.5 
 PUSH_ACCEL_THRESHOLD = 15.0 
-MAX_2D_DISTANCE_TO_SHOOTER = 4 
+MAX_DISTANCE_TO_SHOOTER = 4
 ASSUMED_PLAYER_Z = 6.5
-MAX_3D_DISTANCE_TO_BALL = 3.0
 
 # --- FILTRO 3 PUNTI ---
 MIN_3PT_DIST_METERS = 6.5
@@ -157,7 +154,7 @@ def find_shot_release_nearest_teammate(event_data):
                     print(f"   ⚠️ Nessun compagno trovato vicino alla palla al frame {j}")
 
                 # Se il giocatore è plausibilmente colui che ha tirato
-                if min_dist_3d < MAX_2D_DISTANCE_TO_SHOOTER:
+                if min_dist_3d < MAX_DISTANCE_TO_SHOOTER:
                     closest_player_pos = temp_closest_pos
                     
                     # --- MODIFICA LOGICA DISTANZA ---
@@ -220,31 +217,33 @@ if __name__ == "__main__":
             result = find_shot_release_nearest_teammate(target_event)
             
             if result:
-                # Unpacking di 5 valori ora
+                # 1. Unpacking dei dati rilevati
                 frame, pid, shot_x, shot_y, shot_moment = result
                 
-                # 1. Recupero nome dal primary_info (come richiesto)
-                primary_pid = target_event.get('primary_info', {}).get('player_id', 0)
-                primary_name = get_player_name_by_id(target_event, primary_pid)
+                home_data = target_event.get('home', {})
+                visitor_data = target_event.get('visitor', {})
 
-                # 2. Preparazione dati Team
-                home_team = target_event.get('home', {})
-                visitor_team = target_event.get('visitor', {})
+                # 2. Otteniamo il NOME del tiratore rilevato
+                detected_shooter_name = get_player_name_by_id(target_event, pid)
 
-                poss_id = target_event.get('possession_team_id')
-                if poss_id is None:
-                    poss_id = target_event.get('event_info', {}).get('possession_team_id')
-                if poss_id is None:
-                    poss_id = target_event.get('primary_info', {}).get('team_id')
-
+                
+                # 3. Otteniamo il TEAM_ID del tiratore rilevato cercandolo nelle liste team
+                detected_team_id = None
+                for team_key in ['home', 'visitor']:
+                    for p in target_event.get(team_key, {}).get('players', []):
+                        if str(p['playerid']) == str(int(pid)):
+                            detected_team_id = target_event[team_key].get('teamid')
+                            break
+                
+                # 4. Creazione output con i dati del tiratore rilevato (detectato)
                 output = {
                     "game_id": TARGET_GAME_ID,
                     "game_date": target_event.get('gamedate'),
                     "event_id": TARGET_EVENT_ID,
                     "event_type": event_type,
-                    "possession_team_id": poss_id,
-                    "primary_player_name": primary_name,  # Nome del primary_info
-                    "player_id": pid,            # ID di chi ha tirato davvero
+                    "possession_team_id": detected_team_id,     # Team del tiratore detectato
+                    "primary_player_name": detected_shooter_name, # Nome del tiratore detectato
+                    "player_id": pid,                             # ID del tiratore detectato
                     "shot_frame": frame,
                     "period": shot_moment.get('quarter'),
                     "game_clock": format_clock(shot_moment.get('game_clock')),
@@ -253,21 +252,21 @@ if __name__ == "__main__":
                     "shot_location_y": shot_y,
                     "teams": {
                         "home": {
-                            "name": home_team.get('name'),
-                            "team_id": home_team.get('teamid'),
-                            "abbreviation": home_team.get('abbreviation')
+                            "name": home_data.get('name'),
+                            "team_id": home_data.get('teamid'),
+                            "abbreviation": home_data.get('abbreviation')
                         },
                         "visitor": {
-                            "name": visitor_team.get('name'),
-                            "team_id": visitor_team.get('teamid'),
-                            "abbreviation": visitor_team.get('abbreviation')
+                            "name": visitor_data.get('name'),
+                            "team_id": visitor_data.get('teamid'),
+                            "abbreviation": visitor_data.get('abbreviation')
                         }
                     }
                 }
                 
                 with open(OUTPUT_FILENAME, "w") as f_out: 
                     json.dump(output, f_out, indent=4)
-                print(f"✅ Salvato: {primary_name} coinvolto, tiro rilevato per player {pid}")
+                print(f"✅ Salvato: {detected_shooter_name} coinvolto, tiro rilevato per player {pid}")
             else:
                 print("❌ Nessun tiro da 3 valido trovato.")
         else:

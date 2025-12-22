@@ -1,56 +1,812 @@
 [
-    {
-        "game_id": "0021500333",
-        "game_date": "2015-12-11",
-        "event_id": "180",
-        "event_type": 1,
-        "possession_team_id": 1610612748.0,
-        "primary_player_name": "Danny Green",
-        "shooter_player_id": 101123,
-        "shot_frame": 276,
-        "period": 2,
-        "game_clock": "05:47",
-        "shot_clock": 17.42,
-        "shot_location_x": 87.64611,
-        "shot_location_y": 3.01463,
-        "teams": {
-            "home": {
-                "name": "Indiana Pacers",
-                "team_id": 1610612754,
-                "abbreviation": "IND"
-            },
-            "visitor": {
-                "name": "Miami Heat",
-                "team_id": 1610612748,
-                "abbreviation": "MIA"
-            }
-        }
-    },
-    {
-        "game_id": "0021500292",
-        "game_date": "2015-12-05",
-        "event_id": "12",
-        "event_type": 1,
-        "possession_team_id": 1610612741.0,
-        "primary_player_name": "Derrick Rose",
-        "shooter_player_id": 201565,
-        "shot_frame": 209,
-        "period": 1,
-        "game_clock": "09:41",
-        "shot_clock": 9.65,
-        "shot_location_x": 21.3518,
-        "shot_location_y": 39.38156,
-        "teams": {
-            "home": {
-                "name": "Chicago Bulls",
-                "team_id": 1610612741,
-                "abbreviation": "CHI"
-            },
-            "visitor": {
-                "name": "Charlotte Hornets",
-                "team_id": 1610612766,
-                "abbreviation": "CHA"
-            }
+{
+    "game_id": "0021500333",
+    "game_date": "2015-12-11",
+    "event_id": "180",
+    "event_type": 1,
+    "possession_team_id": 1610612748.0,
+    "primary_player_name": "Danny Green",
+    "shooter_player_id": 101123,
+    "shot_frame": 276,
+    "period": 2,
+    "game_clock": "05:47",
+    "shot_clock": 17.42,
+    "shot_location_x": 87.64611,
+    "shot_location_y": 3.01463,
+    "teams": {
+        "home": {
+            "name": "Indiana Pacers",
+            "team_id": 1610612754,
+            "abbreviation": "IND"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
         }
     }
+},
+{
+    "game_id": "0021500333",
+    "game_date": "2015-12-11",
+    "event_id": "3",
+    "event_type": 2,
+    "possession_team_id": 1610612754.0,
+    "primary_player_name": "Monta Ellis",
+    "player_id": 101145,
+    "shot_frame": 501,
+    "period": 1,
+    "game_clock": "11:14",
+    "shot_clock": 12.79,
+    "shot_location_x": 30.51824,
+    "shot_location_y": 24.33786,
+    "teams": {
+        "home": {
+            "name": "Indiana Pacers",
+            "team_id": 1610612754,
+            "abbreviation": "IND"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500333",
+    "game_date": "2015-12-11",
+    "event_id": "43",
+    "event_type": 2,
+    "possession_team_id": 1610612748.0,
+    "primary_player_name": "Luol Deng",
+    "player_id": 2736,
+    "shot_frame": 560,
+    "period": 1,
+    "game_clock": "06:40",
+    "shot_clock": 12.49,
+    "shot_location_x": 88.74439,
+    "shot_location_y": 47.93442,
+    "teams": {
+        "home": {
+            "name": "Indiana Pacers",
+            "team_id": 1610612754,
+            "abbreviation": "IND"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500333",
+    "game_date": "2015-12-11",
+    "event_id": "161",
+    "event_type": 4,
+    "possession_team_id": 1610612748.0,
+    "primary_player_name": "Chris Bosh",
+    "player_id": 2547,
+    "shot_frame": 314,
+    "period": 2,
+    "game_clock": "07:32",
+    "shot_clock": 14.74,
+    "shot_location_x": 70.9036,
+    "shot_location_y": 41.87807,
+    "teams": {
+        "home": {
+            "name": "Indiana Pacers",
+            "team_id": 1610612754,
+            "abbreviation": "IND"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500292",
+    "game_date": "2015-12-05",
+    "event_id": "12",
+    "event_type": 1,
+    "possession_team_id": 1610612766,
+    "primary_player_name": "Kemba Walker",
+    "player_id": 202689,
+    "shot_frame": 209,
+    "period": 1,
+    "game_clock": "09:41",
+    "shot_clock": 9.65,
+    "shot_location_x": 22.69371,
+    "shot_location_y": 43.01169,
+    "teams": {
+        "home": {
+            "name": "Chicago Bulls",
+            "team_id": 1610612741,
+            "abbreviation": "CHI"
+        },
+        "visitor": {
+            "name": "Charlotte Hornets",
+            "team_id": 1610612766,
+            "abbreviation": "CHA"
+        }
+    }
+},
+{
+    "game_id": "0021500292",
+    "game_date": "2015-12-05",
+    "event_id": "202",
+    "event_type": 2,
+    "possession_team_id": 1610612766,
+    "primary_player_name": "Kemba Walker",
+    "player_id": 202689,
+    "shot_frame": 215,
+    "period": 2,
+    "game_clock": "03:53",
+    "shot_clock": 16.22,
+    "shot_location_x": 27.22443,
+    "shot_location_y": 13.976,
+    "teams": {
+        "home": {
+            "name": "Chicago Bulls",
+            "team_id": 1610612741,
+            "abbreviation": "CHI"
+        },
+        "visitor": {
+            "name": "Charlotte Hornets",
+            "team_id": 1610612766,
+            "abbreviation": "CHA"
+        }
+    }
+},
+{
+    "game_id": "0021500292",
+    "game_date": "2015-12-05",
+    "event_id": "209",
+    "event_type": 1,
+    "possession_team_id": 1610612741,
+    "primary_player_name": "Derrick Rose",
+    "player_id": 201565,
+    "shot_frame": 139,
+    "period": 2,
+    "game_clock": "03:06",
+    "shot_clock": 10.28,
+    "shot_location_x": 84.97023,
+    "shot_location_y": 47.39984,
+    "teams": {
+        "home": {
+            "name": "Chicago Bulls",
+            "team_id": 1610612741,
+            "abbreviation": "CHI"
+        },
+        "visitor": {
+            "name": "Charlotte Hornets",
+            "team_id": 1610612766,
+            "abbreviation": "CHA"
+        }
+    }
+},
+{
+    "game_id": "0021500292",
+    "game_date": "2015-12-05",
+    "event_id": "223",
+    "event_type": 2,
+    "possession_team_id": 1610612741,
+    "primary_player_name": "Nikola Mirotic",
+    "player_id": 202703,
+    "shot_frame": 259,
+    "period": 2,
+    "game_clock": "01:51",
+    "shot_clock": 9.76,
+    "shot_location_x": 68.38825,
+    "shot_location_y": 7.58988,
+    "teams": {
+        "home": {
+            "name": "Chicago Bulls",
+            "team_id": 1610612741,
+            "abbreviation": "CHI"
+        },
+        "visitor": {
+            "name": "Charlotte Hornets",
+            "team_id": 1610612766,
+            "abbreviation": "CHA"
+        }
+    }
+},
+{
+    "game_id": "0021500292",
+    "game_date": "2015-12-05",
+    "event_id": "268",
+    "event_type": 1,
+    "possession_team_id": 1610612741,
+    "primary_player_name": "Derrick Rose",
+    "player_id": 201565,
+    "shot_frame": 259,
+    "period": 3,
+    "game_clock": "09:36",
+    "shot_clock": 13.01,
+    "shot_location_x": 24.25592,
+    "shot_location_y": 10.04313,
+    "teams": {
+        "home": {
+            "name": "Chicago Bulls",
+            "team_id": 1610612741,
+            "abbreviation": "CHI"
+        },
+        "visitor": {
+            "name": "Charlotte Hornets",
+            "team_id": 1610612766,
+            "abbreviation": "CHA"
+        }
+    }
+},
+{
+    "game_id": "0021500292",
+    "game_date": "2015-12-05",
+    "event_id": "352",
+    "event_type": 1,
+    "possession_team_id": 1610612766,
+    "primary_player_name": "Kemba Walker",
+    "player_id": 202689,
+    "shot_frame": 507,
+    "period": 3,
+    "game_clock": "02:13",
+    "shot_clock": 3.3,
+    "shot_location_x": 77.7162,
+    "shot_location_y": 3.47804,
+    "teams": {
+        "home": {
+            "name": "Chicago Bulls",
+            "team_id": 1610612741,
+            "abbreviation": "CHI"
+        },
+        "visitor": {
+            "name": "Charlotte Hornets",
+            "team_id": 1610612766,
+            "abbreviation": "CHA"
+        }
+    }
+},
+{
+    "game_id": "0021500292",
+    "game_date": "2015-12-05",
+    "event_id": "355",
+    "event_type": 2,
+    "possession_team_id": 1610612741,
+    "primary_player_name": "Doug McDermott",
+    "player_id": 203926,
+    "shot_frame": 434,
+    "period": 3,
+    "game_clock": "01:55",
+    "shot_clock": 9.92,
+    "shot_location_x": 28.001,
+    "shot_location_y": 33.43634,
+    "teams": {
+        "home": {
+            "name": "Chicago Bulls",
+            "team_id": 1610612741,
+            "abbreviation": "CHI"
+        },
+        "visitor": {
+            "name": "Charlotte Hornets",
+            "team_id": 1610612766,
+            "abbreviation": "CHA"
+        }
+    }
+},
+{
+    "game_id": "0021500230",
+    "game_date": "2015-11-27",
+    "event_id": "12",
+    "event_type": 1,
+    "possession_team_id": 1610612748,
+    "primary_player_name": "Gerald Green",
+    "player_id": 101123,
+    "shot_frame": 350,
+    "period": 1,
+    "game_clock": "10:27",
+    "shot_clock": 14.12,
+    "shot_location_x": 65.09778,
+    "shot_location_y": 28.42385,
+    "teams": {
+        "home": {
+            "name": "New York Knicks",
+            "team_id": 1610612752,
+            "abbreviation": "NYK"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500230",
+    "game_date": "2015-11-27",
+    "event_id": "224",
+    "event_type": 2,
+    "possession_team_id": 1610612748,
+    "primary_player_name": "Chris Bosh",
+    "player_id": 2547,
+    "shot_frame": 492,
+    "period": 2,
+    "game_clock": "06:11",
+    "shot_clock": 10.32,
+    "shot_location_x": 89.07891,
+    "shot_location_y": 2.63487,
+    "teams": {
+        "home": {
+            "name": "New York Knicks",
+            "team_id": 1610612752,
+            "abbreviation": "NYK"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500230",
+    "game_date": "2015-11-27",
+    "event_id": "245",
+    "event_type": 2,
+    "possession_team_id": 1610612748,
+    "primary_player_name": "Justise Winslow",
+    "player_id": 1626159,
+    "shot_frame": 377,
+    "period": 2,
+    "game_clock": "04:45",
+    "shot_clock": 13.26,
+    "shot_location_x": 87.776,
+    "shot_location_y": 46.94999,
+    "teams": {
+        "home": {
+            "name": "New York Knicks",
+            "team_id": 1610612752,
+            "abbreviation": "NYK"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500230",
+    "game_date": "2015-11-27",
+    "event_id": "353",
+    "event_type": 1,
+    "possession_team_id": 1610612748,
+    "primary_player_name": "Gerald Green",
+    "player_id": 101123,
+    "shot_frame": 386,
+    "period": 3,
+    "game_clock": "06:17",
+    "shot_clock": 12.24,
+    "shot_location_x": 25.36491,
+    "shot_location_y": 39.35478,
+    "teams": {
+        "home": {
+            "name": "New York Knicks",
+            "team_id": 1610612752,
+            "abbreviation": "NYK"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500230",
+    "game_date": "2015-11-27",
+    "event_id": "370",
+    "event_type": 2,
+    "possession_team_id": 1610612748.0,
+    "primary_player_name": "Gerald Green",
+    "player_id": 101123,
+    "shot_frame": 390,
+    "period": 3,
+    "game_clock": "05:15",
+    "shot_clock": 12.58,
+    "shot_location_x": 27.99365,
+    "shot_location_y": 14.95974,
+    "teams": {
+        "home": {
+            "name": "New York Knicks",
+            "team_id": 1610612752,
+            "abbreviation": "NYK"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500230",
+    "game_date": "2015-11-27",
+    "event_id": "520",
+    "event_type": 1,
+    "possession_team_id": 1610612748.0,
+    "primary_player_name": "Josh Richardson",
+    "player_id": 1626196,
+    "shot_frame": 583,
+    "period": 4,
+    "game_clock": "00:40",
+    "shot_clock": 5.06,
+    "shot_location_x": 10.60564,
+    "shot_location_y": 1.81176,
+    "teams": {
+        "home": {
+            "name": "New York Knicks",
+            "team_id": 1610612752,
+            "abbreviation": "NYK"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500230",
+    "game_date": "2015-11-27",
+    "event_id": "522",
+    "event_type": 2,
+    "possession_team_id": 1610612748.0,
+    "primary_player_name": "Josh Richardson",
+    "player_id": 1626196,
+    "shot_frame": 727,
+    "period": 4,
+    "game_clock": "00:10",
+    "shot_clock": 2.22,
+    "shot_location_x": 24.06966,
+    "shot_location_y": 41.1219,
+    "teams": {
+        "home": {
+            "name": "New York Knicks",
+            "team_id": 1610612752,
+            "abbreviation": "NYK"
+        },
+        "visitor": {
+            "name": "Miami Heat",
+            "team_id": 1610612748,
+            "abbreviation": "MIA"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "4",
+    "event_type": 1,
+    "possession_team_id": 1610612761.0,
+    "primary_player_name": "Kyle Lowry",
+    "player_id": 200768,
+    "shot_frame": 64,
+    "period": 1,
+    "game_clock": "11:26",
+    "shot_clock": 8.28,
+    "shot_location_x": 64.58307,
+    "shot_location_y": 19.31134,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "62",
+    "event_type": 1,
+    "possession_team_id": 1610612761,
+    "primary_player_name": "DeMar DeRozan",
+    "player_id": 201942,
+    "shot_frame": 95,
+    "period": 1,
+    "game_clock": "06:17",
+    "shot_clock": 18.1,
+    "shot_location_x": 87.84045,
+    "shot_location_y": 2.45868,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "87",
+    "event_type": 2,
+    "possession_team_id": 1610612761,
+    "primary_player_name": "Kyle Lowry",
+    "player_id": 200768,
+    "shot_frame": 94,
+    "period": 1,
+    "game_clock": "03:43",
+    "shot_clock": 19.43,
+    "shot_location_x": 66.19334,
+    "shot_location_y": 13.7052,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "111",
+    "event_type": 4,
+    "possession_team_id": 1610612755,
+    "primary_player_name": "Isaiah Canaan",
+    "player_id": 203477,
+    "shot_frame": 91,
+    "period": 1,
+    "game_clock": "02:31",
+    "shot_clock": 19.39,
+    "shot_location_x": 25.40222,
+    "shot_location_y": 40.44184,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "113",
+    "event_type": 1,
+    "possession_team_id": 1610612755,
+    "primary_player_name": "Hollis Thompson",
+    "player_id": 203138,
+    "shot_frame": 414,
+    "period": 1,
+    "game_clock": "01:58",
+    "shot_clock": 12.41,
+    "shot_location_x": 22.14396,
+    "shot_location_y": 8.02597,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "123",
+    "event_type": 1,
+    "possession_team_id": 1610612755.0,
+    "primary_player_name": "Isaiah Canaan",
+    "player_id": 203477,
+    "shot_frame": 258,
+    "period": 1,
+    "game_clock": "01:29",
+    "shot_clock": 11.9,
+    "shot_location_x": 14.05835,
+    "shot_location_y": 47.70693,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "148",
+    "event_type": 1,
+    "possession_team_id": 1610612755.0,
+    "primary_player_name": "Isaiah Canaan",
+    "player_id": 203477,
+    "shot_frame": 197,
+    "period": 2,
+    "game_clock": "11:22",
+    "shot_clock": 5.53,
+    "shot_location_x": 29.85394,
+    "shot_location_y": 19.44934,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "164",
+    "event_type": 2,
+    "possession_team_id": 1610612755.0,
+    "primary_player_name": "Nik Stauskas",
+    "player_id": 203917,
+    "shot_frame": 142,
+    "period": 2,
+    "game_clock": "09:26",
+    "shot_clock": 1.19,
+    "shot_location_x": 18.23382,
+    "shot_location_y": 3.33012,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "184",
+    "event_type": 2,
+    "possession_team_id": 1610612755.0,
+    "primary_player_name": "TJ McConnell",
+    "player_id": 204456,
+    "shot_frame": 155,
+    "period": 2,
+    "game_clock": "07:17",
+    "shot_clock": 5.38,
+    "shot_location_x": 29.73504,
+    "shot_location_y": 23.93366,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "248",
+    "event_type": 2,
+    "possession_team_id": 1610612761.0,
+    "primary_player_name": "Kyle Lowry",
+    "player_id": 200768,
+    "shot_frame": 123,
+    "period": 2,
+    "game_clock": "01:53",
+    "shot_clock": 19.77,
+    "shot_location_x": 17.56404,
+    "shot_location_y": 7.54126,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "315",
+    "event_type": 1,
+    "possession_team_id": 1610612761,
+    "primary_player_name": "Luis Scola",
+    "player_id": 2449,
+    "shot_frame": 216,
+    "period": 3,
+    "game_clock": "07:19",
+    "shot_clock": 12.72,
+    "shot_location_x": 27.968,
+    "shot_location_y": 13.87018,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+},
+{
+    "game_id": "0021500115",
+    "game_date": "2015-11-11",
+    "event_id": "335",
+    "event_type": 1,
+    "possession_team_id": 1610612755,
+    "primary_player_name": "Hollis Thompson",
+    "player_id": 203138,
+    "shot_frame": 463,
+    "period": 3,
+    "game_clock": "05:03",
+    "shot_clock": 10.14,
+    "shot_location_x": 85.85308,
+    "shot_location_y": 47.0801,
+    "teams": {
+        "home": {
+            "name": "Philadelphia 76ers",
+            "team_id": 1610612755,
+            "abbreviation": "PHI"
+        },
+        "visitor": {
+            "name": "Toronto Raptors",
+            "team_id": 1610612761,
+            "abbreviation": "TOR"
+        }
+    }
+}
 ]

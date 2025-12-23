@@ -20,22 +20,19 @@ FPS_JSON = 25
 FPS_ANIMATION = 120
 FRAME_MULTIPLIER = FPS_ANIMATION / FPS_JSON 
 
-
-
 # Dimensioni campo NBA (in piedi)
 COURT_LENGTH = 94.0
 COURT_WIDTH = 50.0
 
-# Coordinate canestri (assumi centro campo a 0,0)
-BASKET_1 = (COURT_WIDTH / 2, COURT_LENGTH)  # Canestro a Y = 47
-BASKET_2 = (COURT_WIDTH / 2, 0)  # Canestro a Y = -47
+BASKET_1 = (COURT_LENGTH, COURT_WIDTH / 2)  # (94.0, 25.0) -> Canestro Destro/Alto
+BASKET_2 = (0, COURT_WIDTH / 2)
 
 # === PARAMETRI CRITICI PER IL SYNC ===
 # === PARAMETRI CRITICI PER IL SYNC (SPECIFICI PER LATO) ===
 # Struttura: "nome_animazione": {"crop": Inizio, "release": Rilascio, "end": Fine}
 SHOT_CONFIGS = {
-    "jumpshot_dx": {"crop": 50, "release": 144, "end": 340},
-    "jumpshot_sx": {"crop": 50, "release": 150, "end": 363}
+    "jumpshot_dx": {"crop": 50, "release": 144, "end": 276},
+    "jumpshot_sx": {"crop": 50, "release": 150, "end": 340}
 }
 # Fallback di sicurezza (se il nome non combacia)
 DEFAULT_SHOT_CONFIG = {"crop": 50, "release": 150, "end": 300}
@@ -63,7 +60,6 @@ SPEED_MAP = {
     "celly_lebron": 3.8624
 }
 
-# ... (dopo SPEED_MAP)
 
 # === CONFIGURAZIONE COLORI SQUADRE ===
 TEAM_MAPPING = {
@@ -103,8 +99,8 @@ TEAM_MAPPING = {
 
 # Soglie
 POSSESSION_DISTANCE = 2.5     # piedi (aumentato leggermente per sicurezza)
-WALK_SPEED_THRESHOLD = 2.0    # piedi/frame (ALZATO: 0.3 era troppo sensibile al rumore)
-RUN_SPEED_THRESHOLD = 4.0     # piedi/frame
+WALK_SPEED_THRESHOLD = 0.3   # piedi/frame (ALZATO: 0.3 era troppo sensibile al rumore)
+RUN_SPEED_THRESHOLD = 3.0     # piedi/frame
 
 # Animazioni
 # NOTA: Assicurati che l'azione "idle" esista in Blender (creata con lo script precedente)
@@ -227,18 +223,18 @@ def calculate_speeds(traj):
     return speeds
 
 def determine_basket_target(player_pos):
-    p_y = player_pos[1]
-    dist_1 = abs(p_y - BASKET_1[1])
-    dist_2 = abs(p_y - BASKET_2[1])
+    # Usa la distanza 2D reale (più sicuro che guardare solo X o Y)
+    dist_1 = calculate_distance_2d(player_pos, BASKET_1)
+    dist_2 = calculate_distance_2d(player_pos, BASKET_2)
     return BASKET_1 if dist_1 < dist_2 else BASKET_2
-
+    
 def get_relative_side(player_pos, ball_pos, target_pos):
     look_dir = (target_pos[0] - player_pos[0], target_pos[1] - player_pos[1])
     ball_dir = (ball_pos[0] - player_pos[0], ball_pos[1] - player_pos[1])
     cross_product = (look_dir[0] * ball_dir[1]) - (look_dir[1] * ball_dir[0])
-    return "sx" if cross_product > 0 else "dx"
+    return "dx" if cross_product > 0 else "sx"
 
-def is_ball_bouncing(ball_traj, current_frame, window=10, threshold=1):
+def is_ball_bouncing(ball_traj, current_frame, window=10, threshold=1.5):
     start = max(0, current_frame - window)
     end = min(len(ball_traj), current_frame + 1)
     z_values = [b[2] for b in ball_traj[start:end]]
@@ -361,15 +357,65 @@ def determine_state_sequence(p_traj, b_traj, speeds, shot_offset, shot_blender_s
             continue
             
         # 3. CON PALLA
-        side = get_relative_side(player_pos, ball_pos, look_target)
         past_idx = max(0, i-5)
         past_dist = calculate_distance_2d(p_traj[past_idx][:2], b_traj[past_idx][:2])
         is_catch_phase = (past_dist >= POSSESSION_DISTANCE and has_ball)
         
         if is_catch_phase and i > 5:
-            if speed > RUN_SPEED_THRESHOLD: states.append(f"run_catch_{side}")
-            else: states.append(f"static_catch_{side}")
+
+            # 1. LOGICA DI MEMORIA (Latching)
+            # Controlliamo se nel frame precedente avevamo già deciso uno stile di catch.
+            # Se sì, manteniamo quella decisione (Centrale, DX o SX) per evitare flickering.
+            prev_state = states[-1] if len(states) > 0 else ""
+
+            if prev_state == "holding" or "catch" in prev_state:
+                states.append(prev_state) # Copia identica
+                continue
+
+            basket_ref = determine_basket_target(player_pos)
+
+            look_vec = (basket_ref[0] - player_pos[0], basket_ref[1] - player_pos[1])
+            look_mag = math.sqrt(look_vec[0]**2 + look_vec[1]**2)
+
+            ball_vec = (ball_pos[0] - player_pos[0], ball_pos[1] - player_pos[1])
+            ball_mag = math.sqrt(ball_vec[0]**2 + ball_vec[1]**2)
+
+            is_central = False
+            side_raw = "dx" # Default
+
+            if look_mag > 0 and ball_mag > 0:
+                # Normalizzazione
+                look_norm = (look_vec[0] / look_mag, look_vec[1] / look_mag)
+                ball_norm = (ball_vec[0] / ball_mag, ball_vec[1] / ball_mag)
+
+                # Cross Product Normalizzato (Seno dell'angolo)
+                # Valore tra -1 e 1.
+                cross_val = (look_norm[0] * ball_norm[1]) - (look_norm[1] * ball_norm[0])
+                
+                # Dot Product (Coseno) per assicurarsi che la palla sia davanti (>0)
+                dot_val = (look_norm[0] * ball_norm[0]) + (look_norm[1] * ball_norm[1])
+
+                # SOGLIA CENTRALITÀ: 0.35 (Circa ±20 gradi)
+                # Se è entro la soglia E la palla è davanti (dot > 0)
+                if abs(cross_val) < 0.35 and dot_val > 0:
+                    is_central = True
+                
+                # Determina lato per fallback
+                side_raw = "dx" if cross_val > 0 else "sx"
+
+            if is_central:
+                # Se centrale -> Usiamo "holding" (che mappa su idle_ball)
+                states.append("holding")
+            else:
+                # Logica Standard DX/SX
+                if speed > WALK_SPEED_THRESHOLD: 
+                    states.append(f"run_catch_{side_raw}")
+                else: 
+                    states.append(f"static_catch_{side_raw}")
+
             continue
+
+        side = get_relative_side(player_pos, ball_pos, look_target)
 
         if speed > RUN_SPEED_THRESHOLD: states.append(f"dribble_run_{side}")
         elif speed > WALK_SPEED_THRESHOLD: states.append(f"dribble_walk_{side}")
@@ -499,6 +545,21 @@ def create_sequential_strips(armature, state_sequence, shot_anim_name, p_traj):
                 strip.action_frame_start = s_conf["crop"]
                 strip.action_frame_end = s_conf["end"]
                 strip.scale = 1.0 # Override: Il tiro NON si scala dinamicamente
+            elif state == "dribble_static_sx":
+                strip.action_frame_start = 163
+                strip.action_frame_end = action.frame_range[1]
+                
+                # Ricalcolo ripetizioni basato sulla durata ridotta (End - 163)
+                current_action_len = max(0.1, strip.action_frame_end - strip.action_frame_start)
+                needed_action_frames = duration_frames / scale_factor
+                strip.repeat = needed_action_frames / current_action_len
+            elif state in ["run_catch_dx", "run_catch_sx"]:
+                strip.action_frame_start = 180
+                strip.action_frame_end = action.frame_range[1]
+                
+                current_action_len = max(0.1, strip.action_frame_end - strip.action_frame_start)
+                needed_action_frames = duration_frames / scale_factor
+                strip.repeat = needed_action_frames / current_action_len
             else:
                 strip.action_frame_start = action.frame_range[0]
                 strip.action_frame_end = action.frame_range[1]
@@ -595,8 +656,17 @@ def apply_transforms(obj, trajectory, b_traj, start_frame, shot_start, shot_end)
             if (shot_start <= current_blender_frame <= shot_end) or (dist_ball < POSSESSION_DISTANCE):
                 target_type = "BASKET"
                 basket = determine_basket_target(pos)
-                target = convert_coords(basket[1], basket[0], 10.0)
-                angle_offset = math.radians(+90)
+
+                if i % 25 == 0: # Stampa ogni 1 secondo circa
+                    dist_1 = calculate_distance_2d(pos, BASKET_1)
+                    dist_2 = calculate_distance_2d(pos, BASKET_2)
+                    print(f"🕵️ DEBUG Frame {i} | Pos: ({pos[0]:.1f}, {pos[1]:.1f})")
+                    print(f"   Dist B1 (94,25): {dist_1:.1f} | Dist B2 (0,25): {dist_2:.1f}")
+                    print(f"   SCELTO: {'B1 (Destra/Alto)' if basket == BASKET_1 else 'B2 (Sinistra/Basso)'}")
+
+                target = convert_coords(basket[0], basket[1], 10.0)
+                mid_y = 25.0
+                angle_offset = math.radians(0)
             else:
                 target_type = "PALLA"
                 target = convert_coords(*b_traj[i])
@@ -623,8 +693,9 @@ def apply_transforms(obj, trajectory, b_traj, start_frame, shot_start, shot_end)
                     
                     if (shot_start <= n_blender <= shot_end) or (n_dist < POSSESSION_DISTANCE):
                         nb = determine_basket_target(n_pos)
-                        n_target = convert_coords(nb[1], nb[0], 10.0)
-                        n_offset = math.radians(+90)
+                        n_target = convert_coords(nb[0], nb[1], 10.0)
+                        mid_y = 25.0
+                        n_offset = math.radians(0)
                     else:
                         n_target = convert_coords(*b_traj[i+1])
                         n_offset = 0
@@ -660,7 +731,7 @@ def main():
         
         poss_start, poss_end, _ = analyze_possession(p_traj, b_traj)
 
-        shot_idx = min(shot_offset, len(p_traj)-1)
+        shot_idx = min(shot_offset-50, len(p_traj)-1)
         basket_target = determine_basket_target(p_traj[shot_idx])
         shot_side = get_relative_side(p_traj[shot_idx], b_traj[shot_idx], basket_target)
         shot_anim_key = f"jumpshot_{shot_side}"

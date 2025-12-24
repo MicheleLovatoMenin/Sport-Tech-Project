@@ -62,6 +62,12 @@
             clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
         }
         
+        .court-corner-patch {
+            position: absolute; top: 0; left: 0; width: 15px; height: 15px;
+            background-color: #0a0a0a; /* Stesso colore del fondo */
+            z-index: 4; /* Sopra le linee ma sotto i marker */
+        }
+
         .court-freethrow-dashed {
             position: absolute; width: 24%; height: 25.53%; left: 38%; top: 27.65%;
             border-radius: 50%; border: none;
@@ -70,7 +76,7 @@
         }
 
         .court-3pt-arc {
-            position: absolute; width: 95%; padding-bottom: 95%; left: 2.5%; top: -39.36%;
+            position: absolute; width: 93%; padding-bottom: 93%; left: 3.5%; top: -39.36%;
             clip-path: polygon(0 50%, 100% 50%, 100% 150%, 0 150%); z-index: 5; pointer-events: none;
         }
 
@@ -80,10 +86,11 @@
         }
 
         .court-3pt-line-left, .court-3pt-line-right {
-            position: absolute; top: 0; width: 2px; height: 29.9%; background-color: #f97316; z-index: 1;
+            position: absolute; top: 0; width: 2px; height: 28.5%; background-color: #f97316; z-index: 1;
         }
-        .court-3pt-line-left { left: 5.81%; }
-        .court-3pt-line-right { right: 5.81%; }
+
+        .court-3pt-line-left { left: 6.8%; }
+        .court-3pt-line-right { right: 6.8%; }
 
         .court-backboard {
             width: 12%; height: 2px; background: #f97316; left: 44%; top: 8.51%; 
@@ -221,6 +228,7 @@
 
         <div class="flex-1 flex flex-col items-center">
             <div id="court-area" class="court-container shadow-[0_0_100px_rgba(249,115,22,0.1)]">
+                <div class="court-corner-patch"></div>
                 <div class="court-line court-key"></div>
                 <div class="court-freethrow-circle"></div> 
                 <div class="court-freethrow-dashed"></div> 
@@ -244,7 +252,7 @@
             <p id="overlay-desc" class="text-xs text-neutral-400 font-mono mt-1 tracking-widest">INTERACTIVE VIEW</p>
         </div>
 
-        <button onclick="closeOverlay()" class="absolute top-6 right-8 text-white hover:text-orange-500 transition z-50 bg-neutral-800 p-2 rounded-full hover:bg-neutral-700 border border-neutral-700">
+        <button onclick="closeOverlay()" class="absolute top-6 right-8 text-white hover:text-orange-500 transition z-[100] cursor-pointer bg-neutral-800 p-2 rounded-full hover:bg-neutral-700 border border-neutral-700">
             <i data-lucide="x" class="w-6 h-6"></i>
         </button>
 
@@ -343,7 +351,7 @@
         }
 
         // --- 2. CARICAMENTO E CENTRATURA ---
-        function loadShotModel() {
+        function loadShotModel(matchId, eventId) {
             if(model) { scene.remove(model); model = null; }
             if(mixer) { mixer.stopAllAction(); mixer = null; }
             
@@ -351,7 +359,9 @@
 
             const loader = new GLTFLoader();
             
-            loader.load('./placeholder.glb', function (gltf) {
+            const fileName = `./${matchId}-${eventId}.glb`;
+
+            loader.load(fileName, function (gltf) {
                 model = gltf.scene;
                 
                 // Abilita le ombre su tutti gli oggetti del modello
@@ -396,16 +406,13 @@
                 animate();
 
             }, undefined, function (error) {
-                console.warn('Errore loading o file mancante. Carico sfera di test.');
-                // Fallback semplice
-                const geo = new THREE.SphereGeometry(2, 32, 32);
-                const mat = new THREE.MeshStandardMaterial({ color: 0xf97316 });
-                model = new THREE.Mesh(geo, mat);
-                model.position.y = 2;
-                scene.add(model);
-                controls.target.set(0,2,0);
+                console.error(`Nessun replay trovato per ${fileName}`);
+                
+                // Importante: Spegni lo spinner altrimenti l'utente pensa che stia caricando
                 loaderSpinner.style.display = 'none';
-                animate();
+                
+                // Opzionale: Mostra un messaggio a video "Replay non disponibile"
+                document.getElementById('overlay-title').innerText = "REPLAY NON DISPONIBILE";
             });
         }
 
@@ -446,22 +453,44 @@
             }
         }
 
-        window.openOverlay = function(shotId, result) {
+        // Aggiornata per ricevere matchId e eventId
+        window.openOverlay = function(matchId, eventId, playerName, result) {
             document.getElementById('overlay-3d').classList.remove('hidden-overlay');
             document.getElementById('overlay-3d').classList.add('visible-overlay');
-            document.getElementById('overlay-title').innerText = result === 'make' ? "LEBRON - MAKE" : "LEBRON - MISS";
+            
+            // Titolo dinamico
+            document.getElementById('overlay-title').innerText = `${playerName.toUpperCase()} - ${result === 'make' ? "MAKE" : "MISS"}`;
             
             initThreeJS();
-            loadShotModel();
             
-            if(window.lucide) lucide.createIcons(); // Ricarica icone per i nuovi bottoni
+            // Passiamo gli ID alla funzione di caricamento
+            loadShotModel(matchId, eventId);
+            
+            if(window.lucide) lucide.createIcons();
         }
 
         window.closeOverlay = function() {
-            document.getElementById('overlay-3d').classList.remove('visible-overlay');
-            document.getElementById('overlay-3d').classList.add('hidden-overlay');
+            // 1. Nascondi Overlay
+            const overlay = document.getElementById('overlay-3d');
+            overlay.classList.remove('visible-overlay');
+            overlay.classList.add('hidden-overlay');
+            
+            // 2. IMPORTANTE: Nascondi lo spinner (caso in cui si chiude durante il caricamento o errore)
+            document.getElementById('loader-spinner').style.display = 'none';
+
+            // 3. Ferma il loop di rendering
             if(animationId) cancelAnimationFrame(animationId);
-            if(mixer) mixer.stopAllAction(); // Ferma animazione
+            
+            // 4. Pulisci scena e animazioni (se esistono)
+            if(mixer) {
+                mixer.stopAllAction();
+                mixer = null;
+            }
+            
+            // Opzionale: Resetta il titolo per la prossima volta
+            setTimeout(() => {
+                document.getElementById('overlay-title').innerText = "REPLAY MODE";
+            }, 500);
         }
     </script>
 
@@ -536,7 +565,7 @@
                     el.classList.add('dimmed'); // Se non passa il filtro, diventa grigio/trasparente
                 } else {
                     // Cliccabile solo se visibile per l'overlay 3D
-                    el.onclick = () => window.openOverlay(shot.player, shot.made ? 'make' : 'miss');
+                    el.onclick = () => window.openOverlay(shot.matchId, shot.eventId, shot.player, shot.made ? 'make' : 'miss');
                 }
 
                 // Disegna l'icona: Cerchio (Segnato) o X (Sbagliato)

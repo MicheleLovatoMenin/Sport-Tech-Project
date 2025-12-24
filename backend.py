@@ -71,6 +71,8 @@ def process_shot_data(raw_data):
 
         # Creazione del nuovo oggetto processato
         clean_shot = {
+            "matchId": shot['game_id'],
+            "eventId": shot['event_id'],
             "player": shot['primary_player_name'],
             "team": team_name,
             "match": match_name,

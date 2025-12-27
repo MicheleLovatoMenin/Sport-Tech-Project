@@ -4,34 +4,30 @@ import sys
 import traceback
 import os
 
-# =========================================================================
-# 🛠️ CONFIGURAZIONE UTENTE
-# =========================================================================
-JSON_FILE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project\nba_tracking_data_tiny.json" #DA CAMBIARE
+# USER CONFIGURATION
+JSON_FILE_PATH = r"nba_tracking_data_tiny.json"
+OUTPUT_FILENAME = "shot_metadata.json" 
+SHOTS_DATA_FILE = "shots_data.json"
 
 TARGET_GAME_ID = "0021500333" 
-TARGET_EVENT_ID = "43"       
+TARGET_EVENT_ID = "179"   
 
-OUTPUT_FILENAME = "shot_metadata.json" 
-
-# --- COSTANTI FISICHE ---
+# --- PHYSICAL CONSTANTS ---
 FRAME_RATE_FPS = 25.0
 DELTA_TIME = 1.0 / FRAME_RATE_FPS 
 MIN_Z_TRIGGER = 10.5 
 PUSH_ACCEL_THRESHOLD = 15.0 
 MAX_2D_DISTANCE_TO_SHOOTER = 4 
 
-# --- FILTRO 3 PUNTI ---
+# --- 3-POINT FILTER ---
 MIN_3PT_DIST_METERS = 6.5
-MIN_3PT_DIST_FEET = MIN_3PT_DIST_METERS * 3.28084 # ~22 piedi
+MIN_3PT_DIST_FEET = MIN_3PT_DIST_METERS * 3.28084 # 22 feet
 
-# --- COORDINATE CANESTRI FISSI ---
+# --- FIXED HOOP COORDINATES ---
 BASKET_LEFT = (5.25, 25.0)
 BASKET_RIGHT = (88.75, 25.0)
 
-# =========================================================================
-# 📐 FUNZIONI HELPER
-# =========================================================================
+# HELPER FUNCTIONS
 def calculate_distance_2d(pos1, pos2):
     return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
 
@@ -42,30 +38,27 @@ def format_clock(seconds):
     return f"{minutes:02d}:{secs:02d}"
 
 def get_player_name_by_id(event_data, target_id):
-    # Cerca tra i giocatori home e visitor
+    # Search among home and visitor players
     for team_key in ['home', 'visitor']:
         for p in event_data.get(team_key, {}).get('players', []):
             if str(p['playerid']) == str(int(target_id)):
                 return f"{p['firstname']} {p['lastname']}"
     return "Unknown"
 
-# =========================================================================
-# 🧠 LOGICA DI ANALISI
-# =========================================================================
+# ANALYSIS LOGIC
 def find_shot_release_nearest_teammate(event_data):
     moments = event_data.get('moments', [])
     if len(moments) < 5: return None
 
-    try:
-        # Non ci serve più l'home_team_id per capire il canestro, 
-        # ma ci serve shooter_team_id per filtrare i compagni
+    try: 
+        # we need shooter_team_id to filter teammates
         if 'primary_info' in event_data:
              shooter_team_id = int(event_data['primary_info']['team_id'])
         else:
              shooter_team_id = int(event_data.get('possession_team_id', 0))
     except: return None
     
-    # 1. PRE-CALCOLO FISICA PER TUTTI I FRAME
+    # PHYSICS PRE-CALCULATION FOR ALL FRAMES
     ball_data_history = [] 
     for i in range(len(moments)):
         m = moments[i]
@@ -85,41 +78,40 @@ def find_shot_release_nearest_teammate(event_data):
 
         ball_data_history.append({'pos': pos, 'a_z': accel_z, 'frame': i, 'valid': True})
 
-    # 2. SCANSIONE TEMPORALE (LOOP)
+    # TEMPORAL SCAN (LOOP)
     i = 0
     while i < len(ball_data_history):
         curr = ball_data_history[i]
         
-        # A. Se la palla è BASSA o dati non validi -> vai al prossimo frame
+        # If ball is LOW or invalid data -> go to next frame
         if not curr['valid'] or curr['pos'][2] <= MIN_Z_TRIGGER:
             i += 1
             continue
 
-        print(f"--- TRIGGER ATTIVATO al frame {i} (Z={curr['pos'][2]:.2f}) ---")
+        print(f"--- TRIGGER ACTIVATED at frame {i} (Z={curr['pos'][2]:.2f}) ---")
 
-        # B. TRIGGER ATTIVATO: La palla è alta (> 10.5 ft)
+        # TRIGGER ACTIVATED: Ball is high (> 10.5 ft)
         push_found = False
         shot_frame_index = -1
         shooter_id = None
         closest_player_pos = (0, 0) # Placeholder
         dist_to_basket = 0.0
         
-        # Cerchiamo indietro dal frame corrente 'i' fino all'inizio
+        # Search backwards from current frame 'i' to the beginning
         for j in range(i, 1, -1):
             b_curr = ball_data_history[j]
             b_prev = ball_data_history[j-1] 
             
-            # AGGIUNGI QUI (attenzione: genera molti log, utile per frame specifici):
-            if b_curr['a_z'] > 5.0: # Logga anche accelerazioni minori per capire il trend
-                print(f"DEBUG: Controllo frame {j}, Accel_Z: {b_curr['a_z']:.2f}")
+            if b_curr['a_z'] > 5.0:
+                print(f"DEBUG: Checking frame {j}, Accel_Z: {b_curr['a_z']:.2f}")
 
-            # Se troviamo un picco di accelerazione (il rilascio)
+            # If we find an acceleration peak (the release)
             if b_curr['a_z'] > PUSH_ACCEL_THRESHOLD:
                 moment_data = moments[j-1]
                 ball_xy = (b_prev['pos'][0], b_prev['pos'][1])
-                print(f"🔥 PICCO ACCELERAZIONE trovato al frame {j}: {b_curr['a_z']:.2f}")
+                print(f"ACCELERATION PEAK found at frame {j}: {b_curr['a_z']:.2f}")
                 
-                # Cerchiamo il compagno più vicino alla palla
+                # Find the teammate closest to the ball
                 min_dist_player = float('inf')
                 temp_closest_pos = None
                 temp_closest_id = None
@@ -134,22 +126,18 @@ def find_shot_release_nearest_teammate(event_data):
                             temp_closest_id = p['playerid']
                 
                 if temp_closest_id:
-                    print(f"   👤 Giocatore più vicino al frame {j}: ID {temp_closest_id} a {min_dist_player:.2f} ft")
+                    print(f"Closest player at frame {j}: ID {temp_closest_id} at {min_dist_player:.2f} ft")
                 else:
-                    print(f"   ⚠️ Nessun compagno trovato vicino alla palla al frame {j}")
+                    print(f"No teammate found near the ball at frame {j}")
 
-                # Se il giocatore è plausibilmente colui che ha tirato
+                # If the player is plausibly the shooter
                 if min_dist_player < MAX_2D_DISTANCE_TO_SHOOTER:
                     closest_player_pos = temp_closest_pos
                     
-                    # --- MODIFICA LOGICA DISTANZA ---
-                    # Calcoliamo la distanza da entrambi i canestri
+                    # --- DISTANCE LOGIC MODIFICATION ---
+                    # Calculate distance from both baskets
                     dist_left = calculate_distance_2d(closest_player_pos, BASKET_LEFT)
                     dist_right = calculate_distance_2d(closest_player_pos, BASKET_RIGHT)
-                    
-                    # Consideriamo la distanza minore (la palla è vicina a QUEL canestro?)
-                    # O meglio: siamo lontani da QUALSIASI canestro per essere da 3?
-                    # Se min(d_left, d_right) > 22ft, allora siamo lontani da entrambi i ferri.
                     dist_to_basket = min(dist_left, dist_right)
                     
                     shot_frame_index = b_prev['frame']
@@ -157,18 +145,17 @@ def find_shot_release_nearest_teammate(event_data):
                     push_found = True
                     break 
         
-        # C. VALUTAZIONE DEL TIRO TROVATO
+        # EVALUATION OF FOUND SHOT
         if push_found:
-            print(f"🧐 Frame {i} (Trigger) -> Push a frame {shot_frame_index}. Pos: {closest_player_pos}. Distanza dal ferro più vicino: {dist_to_basket:.2f} ft")
+            print(f"Frame {i} (Trigger) -> Push at frame {shot_frame_index}. Pos: {closest_player_pos}. Dist to nearest rim: {dist_to_basket:.2f} ft")
             
-            # 1. CONTROLLO DISTANZA 3 PUNTI (Sulla distanza minore calcolata)
+            # 3-POINT DISTANCE CHECK
             if dist_to_basket >= MIN_3PT_DIST_FEET:
-                print(f"✅ TIRO DA 3 VALIDO! ({dist_to_basket:.2f} ft)")
-                # Restituiamo anche le coordinate x, y
+                print(f"VALID 3-POINT SHOT! ({dist_to_basket:.2f} ft)")
                 return shot_frame_index, shooter_id, closest_player_pos[0], closest_player_pos[1], moments[shot_frame_index]
             else:
-                # 2. SCARTO E AVANZAMENTO
-                print(f"🚫 SCARTATO: Distanza insufficiente ({dist_to_basket:.2f} ft). Cerco oltre...")
+                # DISCARD AND ADVANCE
+                print(f"DISCARDED: Insufficient distance ({dist_to_basket:.2f} ft). Searching further...")
                 
                 while i < len(ball_data_history) and ball_data_history[i]['pos'][2] > MIN_Z_TRIGGER:
                     i += 1
@@ -178,38 +165,31 @@ def find_shot_release_nearest_teammate(event_data):
 
     return None
 
-# =========================================================================
-# 🚀 MAIN
-# =========================================================================
+# MAIN
 if __name__ == "__main__":
     try:
         target_event = None
-        print(f"Lettura file: {JSON_FILE_PATH}")
+        print(f"Reading file: {JSON_FILE_PATH}")
         
         with open(JSON_FILE_PATH, 'r', encoding='utf-8') as f:
             for line in f:
                 ev = json.loads(line)
-                # --- MODIFICA: Controllo ID e salvo l'evento ---
                 if str(ev.get('gameid')) == TARGET_GAME_ID and str(ev['event_info']['id']) == TARGET_EVENT_ID:
                     target_event = ev
                     break
         
         if target_event:
-            # --- MODIFICA: Stampa Event Type ---
             event_type = target_event['event_info'].get('type', 'N/A')
-            print(f"📂 Evento Trovato! ID: {TARGET_EVENT_ID}, Type: {event_type}")
+            print(f"Event Found! ID: {TARGET_EVENT_ID}, Type: {event_type}")
 
             result = find_shot_release_nearest_teammate(target_event)
             
             if result:
-                # Unpacking di 5 valori ora
                 frame, pid, shot_x, shot_y, shot_moment = result
                 
-                # 1. Recupero nome dal primary_info (come richiesto)
                 primary_pid = target_event.get('primary_info', {}).get('player_id', 0)
                 primary_name = get_player_name_by_id(target_event, primary_pid)
 
-                # 2. Preparazione dati Team
                 home_team = target_event.get('home', {})
                 visitor_team = target_event.get('visitor', {})
 
@@ -225,8 +205,8 @@ if __name__ == "__main__":
                     "event_id": TARGET_EVENT_ID,
                     "event_type": event_type,
                     "possession_team_id": poss_id,
-                    "primary_player_name": primary_name,  # Nome del primary_info
-                    "player_id": pid,            # ID di chi ha tirato davvero
+                    "primary_player_name": primary_name,
+                    "player_id": pid,
                     "shot_frame": frame,
                     "period": shot_moment.get('quarter'),
                     "game_clock": format_clock(shot_moment.get('game_clock')),
@@ -249,11 +229,32 @@ if __name__ == "__main__":
                 
                 with open(OUTPUT_FILENAME, "w") as f_out: 
                     json.dump(output, f_out, indent=4)
-                print(f"✅ Salvato: {primary_name} coinvolto, tiro rilevato per player {pid}")
+                
+                shots_history = []
+
+                if os.path.exists(SHOTS_DATA_FILE):
+                    try:
+                        with open(SHOTS_DATA_FILE, "r") as f_hist:
+                            content = json.load(f_hist)
+                            if isinstance(content, list):
+                                shots_history = content
+                    except:
+                        shots_history = []
+
+                # Append new event to list
+                shots_history.append(output)
+
+                # Save updated list
+                with open(SHOTS_DATA_FILE, "w") as f_hist:
+                    json.dump(shots_history, f_hist, indent=4)
+
+                print(f"Saved single file to {OUTPUT_FILENAME}")
+                
+                print(f"Saved: {primary_name} involved, shot detected for player {pid}")
             else:
-                print("❌ Nessun tiro da 3 valido trovato.")
+                print("No valid 3-point shot found.")
         else:
-            print("❌ Evento non trovato.")
+            print("Event not found.")
 
     except Exception as e:
         traceback.print_exc()

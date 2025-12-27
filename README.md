@@ -100,6 +100,12 @@ To explore the interactive dashboard and view previously reconstructed shots:
    
     Open your browser to `http://localhost:5000` (or the port specified in the terminal). You will see a 2D view of the court. Markers indicate shot locations: **X** (Missed) and **O** (Made). Use the dropdown menu to filter shots by Player, Team, or Game ID. Click on any marker to load the **360° interactive 3D viewer** for that specific action.
 
+
+
+https://github.com/user-attachments/assets/e8ed39c1-40a9-4b9b-b524-6057dbe1bdd2
+
+
+
 ### Developer Mode
 To reconstruct a new action from raw data, follow this pipeline:
 

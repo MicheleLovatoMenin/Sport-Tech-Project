@@ -2,15 +2,13 @@ import json
 import math
 import traceback
 import os
+import argparse
 
 # USER CONFIGURATION
-JSON_FILE_PATH = r"nba_tracking_data_tiny.json"
-OUTPUT_FILENAME = "shot_metadata.json" 
-SHOTS_DATA_FILE = "shots_data.json"
-
-
-TARGET_GAME_ID = "0021500333"
-TARGET_EVENT_ID = "179"       
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_FILE_PATH = os.path.join(BASE_DIR, "nba_tracking_data_tiny.json")
+OUTPUT_FILENAME = os.path.join(BASE_DIR, "shot_metadata.json") 
+SHOTS_DATA_FILE = os.path.join(BASE_DIR, "shots_data.json")
 
 
 # --- PHYSICAL CONSTANTS ---
@@ -168,8 +166,19 @@ def find_shot_release_nearest_teammate(event_data):
 
 # MAIN
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description= "Process NBA tracking data to find the shot frame of a 3-point shot event.")
+    parser.add_argument("--game_id", type=str, help="ID of the match (es. 0021500333)")
+    parser.add_argument("--event_id", type=str, help="ID of the event (es. 179)")
+    
+    args = parser.parse_args()
+    
+    TARGET_GAME_ID = args.game_id
+    TARGET_EVENT_ID = args.event_id
+
     try:
         target_event = None
+        print(f"Finding Game ID: {TARGET_GAME_ID}, Event ID: {TARGET_EVENT_ID}")
         print(f"Reading file: {JSON_FILE_PATH}")
         
         with open(JSON_FILE_PATH, 'r', encoding='utf-8') as f:

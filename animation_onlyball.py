@@ -2,24 +2,16 @@ import bpy
 import os
 import json
 import math
-# from collections import deque # RIMOSSO
 
-# --- IMPOSTAZIONI DA PERSONALIZZARE ---
+# --- USER CONFIGURATION ---
 JSON_FILE_PATH = r"C:\Users\DISI\Documents\SportTech Students\Basket_Virtualisation\Sport-Tech-Project\nba_tracking_data_tiny.json"
 
 TARGET_GAME_ID = "0021500333"
 TARGET_EVENT_ID = "202"  
 
-# --- Soglia di velocità RIMOSSA ---
-# SPEED_THRESHOLD = 0.3
-# --- FINE IMPOSTAZIONI ---
-
-
 # ######################################################################
-# --- FASE 3: CARICAMENTO DATI E ANIMAZIONE ---
+# ---  DATA LOADING AND ANIMATION ---
 # ######################################################################
-
-print("--- Inizio FASE 3: Animazione ---")
 
 def convert_coords(nba_x, nba_y, nba_z):
     blender_x = nba_y
@@ -28,21 +20,21 @@ def convert_coords(nba_x, nba_y, nba_z):
     return (blender_x, blender_y, blender_z)
 
 def cleanup_previous_animation():
-    print("Pulizia animazione precedente...")
+    print("Cleaning up previous animation...")
 
     obj_names_to_clear = ["ball"] + [f"player_{i}" for i in range(10)]
     for obj_name in obj_names_to_clear:
         if obj_name in bpy.data.objects:
             obj = bpy.data.objects[obj_name]
             obj.animation_data_clear()
-    print("Pulizia completata.")
+    print("Cleanup completed.")
 
 try:
     cleanup_previous_animation()
 
-    # --- 1. Carica i dati JSON ---
-    print(f"Caricamento dati da {JSON_FILE_PATH}...")
-    print(f"Ricerca di GAME_ID: {TARGET_GAME_ID} e EVENT_ID: {TARGET_EVENT_ID}")
+    # --- 1. Load JSON Data ---
+    print(f"Loading data from {JSON_FILE_PATH}...")
+    print(f"Searching for GAME_ID: {TARGET_GAME_ID} and EVENT_ID: {TARGET_EVENT_ID}")
 
     event = None
     target_game_str = str(TARGET_GAME_ID).strip()
@@ -58,24 +50,24 @@ try:
                     isinstance(current_event['event_info'], dict):
                         event_id_from_file = str(current_event['event_info'].get('id', '')).strip()
 
-                #DOPPIO CONTROLLO: Partita AND Evento
+                # DOUBLE CHECK: Game AND Event
                 if game_id_from_file == target_game_str and event_id_from_file == target_event_str:
                     event = current_event
-                    print(f"✅ TROVATO! Partita {target_game_str}, Evento {target_event_str} alla riga {i+1}")
+                    print(f"FOUND! Game {target_game_str}, Event {target_event_str} at line {i+1}")
                     break
 
             except (json.JSONDecodeError, KeyError, IndexError):
                 continue
 
     if event is None:
-        raise Exception(f"ERRORE: Non è stato trovato l'evento '{target_event_str}' per la partita '{target_game_str}'.")
+        raise Exception(f"ERROR: Event '{target_event_str}' for game '{target_game_str}' was not found.")
 
 
-    # --- 2. Impostazioni Scena ---
+    # Scene Settings
     bpy.context.scene.render.fps = 25
 
-    # --- 4. Mappa Giocatori (ROBUSTA) ---
-    print("Mappatura giocatori ID -> Oggetti 3D...")
+    # Player Mapping
+    print("Mapping Player IDs -> 3D Objects...")
     player_id_to_object_name_map = {}
 
     home_obj_names = [f"player_{i}" for i in range(5)]
@@ -93,35 +85,31 @@ try:
             if home_obj_names:
                 obj_name = home_obj_names.pop(0) 
                 player_id_to_object_name_map[player_id_str] = obj_name
-                print(f"[HOME - Rosso] PlayerID {player_id_str} -> {obj_name}")
+                print(f"[HOME - Red] PlayerID {player_id_str} -> {obj_name}")
         elif team_id == visitor_team_id:
             if visitor_obj_names:
                 obj_name = visitor_obj_names.pop(0) 
                 player_id_to_object_name_map[player_id_str] = obj_name
-                print(f"[VISITOR - Blu] PlayerID {player_id_str} -> {obj_name}")
+                print(f"[VISITOR - Blue] PlayerID {player_id_str} -> {obj_name}")
 
-    print(f"Mappatura completata. {len(player_id_to_object_name_map)} giocatori mappati.")
+    print(f"Mapping completed. {len(player_id_to_object_name_map)} players mapped.")
     
-    print("Impostazione modalità di rotazione 'XYZ' (Euler) per i giocatori...")
+    print("Setting rotation mode 'XYZ' (Euler) for players...")
     for player_id_str, obj_name in player_id_to_object_name_map.items():
         if obj_name in bpy.data.objects:
             player_obj = bpy.data.objects[obj_name]
             player_obj.rotation_mode = 'XYZ'
         else:
-            print(f"ATTENZIONE: Oggetto {obj_name} non trovato durante impostazione Euler.")
-    print("Modalità rotazione impostata.")
+            print(f"WARNING: Object {obj_name} not found during Euler setting.")
+    print("Rotation mode set.")
 
-    # --- 5. Ciclo di Animazione (SOLO GUARDA PALLA) ---
-    print("Inizio creazione keyframes...")
+    # Animation Loop (look at ball only)
+    print("Starting keyframe creation...")
     start_game_clock = event['moments'][0]['game_clock']
     ball_obj = bpy.data.objects["ball"]
     num_moments = len(event['moments'])
 
-    # --- Dizionari per la rotazione RIMOSSI ---
-    # player_last_pos = {} 
-
-    # Flag per stampare il debug solo una volta
-    debug_stampato = False 
+    debug_printed = False 
 
     for i, moment in enumerate(event['moments']):
         current_game_clock = moment['game_clock']
@@ -129,15 +117,15 @@ try:
         bpy.context.scene.frame_set(frame_num)
 
         if i % 50 == 0: 
-            print(f"Processo moment {i}/{num_moments} (Frame: {frame_num})")
+            print(f"Processing moment {i}/{num_moments} (Frame: {frame_num})")
 
-        # --- A. Anima la Palla ---
+        # Animate the Ball
         ball_coords_nba = moment['ball_coordinates']
-        ball_pos_2d = (ball_coords_nba['x'], ball_coords_nba['y']) # Posizione 2D palla
+        ball_pos_2d = (ball_coords_nba['x'], ball_coords_nba['y']) # 2D ball position
         ball_obj.location = convert_coords(ball_coords_nba['x'], ball_coords_nba['y'], ball_coords_nba['z'])
         ball_obj.keyframe_insert(data_path="location", frame=frame_num)
 
-        # --- B. Anima i Giocatori (SOLO GUARDA PALLA) ---
+        # Animate Players (LOOK AT BALL ONLY) ---
         for p_data in moment['player_coordinates']:
             player_id_str = str(p_data['playerid']) 
             obj_name = player_id_to_object_name_map.get(player_id_str)
@@ -145,54 +133,52 @@ try:
             if obj_name:
                 player_obj = bpy.data.objects[obj_name]
 
-                # Leggi le coordinate NBA
+                # Read NBA coordinates
                 nba_x = p_data['x']
                 nba_y = p_data['y']
                 nba_z = p_data['z']
 
-                # STAMPA DI DEBUG (solo per il primo frame)
-                if i == 0 and not debug_stampato:
-                    print(f"-> DEBUG (Frame 0): {obj_name} (ID: {player_id_str}) -> DATI LETTI: (x={nba_x:.1f}, y={nba_y:.1f}, z={nba_z:.1f})")
+                # DEBUG PRINT (only for the first frame)
+                if i == 0 and not debug_printed:
+                    print(f"-> DEBUG (Frame 0): {obj_name} (ID: {player_id_str}) -> DATA READ: (x={nba_x:.1f}, y={nba_y:.1f}, z={nba_z:.1f})")
 
-                # Applica le coordinate di POSIZIONE
+                # Apply POSITION coordinates
                 player_obj.location = convert_coords(nba_x, nba_y, nba_z)
                 player_obj.keyframe_insert(data_path="location", frame=frame_num)
 
-                # --- INIZIO LOGICA DI ROTAZIONE (SOLO GUARDA PALLA) ---
+                # START ROTATION LOGIC (look at ball only)
                 
                 current_pos_2d = (nba_x, nba_y)
                 
-                # Calcola il vettore dal giocatore alla palla
+                # Calculate vector from player to ball
                 delta_to_ball_x = ball_pos_2d[0] - current_pos_2d[0]
                 delta_to_ball_y = ball_pos_2d[1] - current_pos_2d[1]
                 
-                # Calcola l'angolo per guardare la palla (Convertito per Blender)
-                # math.atan2(Y_Blender, X_Blender) - offset 90 gradi
+                # Calculate angle to look at the ball (Converted for Blender)
                 angle_z = math.atan2(delta_to_ball_x, delta_to_ball_y) + (math.pi / 2)
                 
-                # Applica la rotazione
+                # Apply rotation
                 player_obj.rotation_euler.z = angle_z
                 player_obj.keyframe_insert(data_path="rotation_euler", frame=frame_num)
                 
-                # --- FINE LOGICA DI ROTAZIONE ---
+                # --- END ROTATION LOGIC ---
 
-        # Imposta il flag dopo aver processato tutti i giocatori del primo frame
         if i == 0:
-            debug_stampato = True
+            debug_printed = True
 
-    # --- 6. Imposta la Durata della Scena ---
+    # Set Scene Duration
     start_frame = 0
-    end_frame = len(event['moments']) - 1 # Usa la lunghezza totale della lista
+    end_frame = len(event['moments']) - 1
     bpy.context.scene.frame_start = start_frame
     bpy.context.scene.frame_end = end_frame
 
-    print(f"Creazione keyframes completata.")
-    print(f"Animazione impostata da frame {start_frame} a {end_frame}.")
+    print(f"Keyframe creation completed.")
+    print(f"Animation set from frame {start_frame} to {end_frame}.")
 
 except Exception as e:
-    print(f"ERRORE CRITICO durante la Fase 3: {e}")
+    print(f"CRITICAL ERROR during Phase 3: {e}")
     import traceback
     traceback.print_exc()
 
-print("\n--- SCRIPT DI ANIMAZIONE COMPLETATO ---")
-print("L'animazione è caricata in Blender. Imposta manualmente il rendering se necessario.")
+print("\n--- ANIMATION SCRIPT COMPLETED ---")
+print("Animation loaded in Blender.")

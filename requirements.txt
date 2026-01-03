@@ -1,0 +1,23 @@
+# ====================================================================
+# REQUIREMENTS PER BLENDER SCRIPTS
+# (rule_based_blend, shot_frame3, shot_frame4, animation_only_ball, rule_based)
+# ====================================================================
+# Nota: bpy (Blender Python API) è già incluso nell'installazione di Blender
+# Questi script usano solo moduli della standard library Python:
+# - json (built-in)
+# - math (built-in)
+# - os (built-in)
+# - sys (built-in)
+# - traceback (built-in)
+# - itertools (built-in)
+#
+# NON SERVONO PACCHETTI ESTERNI per gli script Blender!
+
+# ====================================================================
+# REQUIREMENTS PER ALTRI SCRIPT
+# (backend.py, frontend, create_dataset_3pt.py, event_info.py, ecc.)
+# ====================================================================
+
+# Web Framework
+Flask>=2.3.0
+Flask-CORS>=4.0.0

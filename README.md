@@ -70,6 +70,8 @@ The core virtualization takes place in **Blender** using the `rule_based.py` scr
     ```bash
     pip install -r requirements.txt
     ```
+* **Directory:**
+For each file that is launched in Blender (`rule_based_blend.py`, `rule_based_genMM.py`), you must manually modify the base directory.
 
 ### Dataset Setup
 1.  **Download Data:** Acquire the **NBA Tracking Data (2015-16)** from HuggingFace:
@@ -108,15 +110,18 @@ https://github.com/user-attachments/assets/e8ed39c1-40a9-4b9b-b524-6057dbe1bdd2
 To reconstruct a new action from raw data, follow this pipeline:
 
 #### Step A: Data Extraction
-Run the extraction script on python to identify the shot frame and isolate tracking data.
+Run the extraction script on python to identify the shot frame and isolate tracking data selecting game_id and event_id. Here there is an example:
 ```bash
-python shot_frame.py
+python shot_frame.py --game_id 0021500333 --event_id 179
 ```
 
 * **Robust Fallback (`shot_frame_adj.py`):**
     Use this script when the action data is misaligned (e.g., the "3pt shot" label appears at event index 189, but the actual data is at 188).
     * *Why should I use it?* Sometimes the dataset's possession label is incorrect for the specific frame.
     * *How it works:* Unlike the standard script which looks for the shooter among the 5 offensive players, this script scans **all 10 players** on the court. It identifies the shooter based on proximity to the ball, ensuring the correct player is selected even if the possession data is flawed.
+```bash
+python shot_frame_adj.py --game_id 0021500333 --event_id 179
+```
 
 **Output:** Both scripts update `shot_metadata.json` (current action data) and append the result to `shots_data.json` (historical database).
 

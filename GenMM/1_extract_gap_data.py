@@ -1,0 +1,709 @@
+import bpy
+import json
+import math
+import os
+from itertools import groupby
+
+# ==================== CONFIGURAZIONE ====================
+
+# Percorsi (Assicurati che siano corretti)
+BASE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project"
+DATASET_JSON = os.path.join(BASE_PATH, "nba_tracking_data_tiny.json")
+METADATA_JSON = os.path.join(BASE_PATH, "shot_metadata.json")
+
+# Oggetti Blender
+ARMATURE_NAME = "Armature"
+BALL_NAME = "ball"
+
+# Sincronizzazione Temporale
+FPS_JSON = 25
+FPS_ANIMATION = 120
+FRAME_MULTIPLIER = FPS_ANIMATION / FPS_JSON 
+
+
+
+# Dimensioni campo NBA (in piedi)
+COURT_LENGTH = 94.0
+COURT_WIDTH = 50.0
+
+# Coordinate canestri (assumi centro campo a 0,0)
+BASKET_1 = (COURT_WIDTH / 2, COURT_LENGTH)  # Canestro a Y = 47
+BASKET_2 = (COURT_WIDTH / 2, 0)  # Canestro a Y = -47
+
+# === PARAMETRI CRITICI PER IL SYNC ===
+# === PARAMETRI CRITICI PER IL SYNC (SPECIFICI PER LATO) ===
+# Struttura: "nome_animazione": {"crop": Inizio, "release": Rilascio, "end": Fine}
+SHOT_CONFIGS = {
+    "jumpshot_dx": {"crop": 50, "release": 144, "end": 340},
+    "jumpshot_sx": {"crop": 50, "release": 150, "end": 363}
+}
+# Fallback di sicurezza (se il nome non combacia)
+DEFAULT_SHOT_CONFIG = {"crop": 50, "release": 150, "end": 300}
+
+# === CONFIGURAZIONE VELOCITÀ ANIMAZIONI (Anti-Sliding) ===
+# Valori in Piedi/Secondo (ft/s) ottenuti da calibrazione
+SPEED_MAP = {
+    # Movimento Base
+    "walk": 5.5362,
+    "slow_run": 7.6720,
+    "fast_run": 9.0487,
+    "back_run": 5.9016,  # Valore precedente mantenuto
+    
+    # Dribbling Movimento
+    "dribble_walk_dx": 6.2386,
+    "dribble_walk_sx": 6.1800,
+    "dribble_run_dx": 9.5703,
+    "dribble_run_sx": 9.0724,
+    
+    # Catch in movimento
+    "run_catch_dx": 2.6300,
+    "run_catch_sx": 3.4021,
+    
+    # Extra
+    "celly_lebron": 3.8624
+}
+
+# =====================================
+
+# Soglie
+POSSESSION_DISTANCE = 2.5     # piedi (aumentato leggermente per sicurezza)
+WALK_SPEED_THRESHOLD = 2.0    # piedi/frame (ALZATO: 0.3 era troppo sensibile al rumore)
+RUN_SPEED_THRESHOLD = 4.0     # piedi/frame
+
+# Animazioni
+# NOTA: Assicurati che l'azione "idle" esista in Blender (creata con lo script precedente)
+# === MAPPING ANIMAZIONI ===
+ANIM_MAP = {
+    # NO PALLA (MOVIMENTO)
+    "idle": "idle",
+    "walk": "walk",
+    "slow_run": "slow_run",
+    "fast_run": "fast_run",
+    "back_run": "back_run",
+    
+    # HOLDING (Palla ferma in mano)
+    "holding": "idle_ball",  # Assicurati di avere questa azione o usa un placeholder
+    
+    # CATCH
+    "static_catch_dx": "static_catch_dx", "static_catch_sx": "static_catch_sx",
+    "run_catch_dx": "run_catch_dx", "run_catch_sx": "run_catch_sx",
+    
+    # DRIBBLE MOVIMENTO
+    "dribble_walk_dx": "dribble_walk_dx", "dribble_walk_sx": "dribble_walk_sx",
+    "dribble_run_dx": "dribble_run_dx", "dribble_run_sx": "dribble_run_sx",
+    
+    # DRIBBLE STATICO
+    "dribble_static_dx": "stationary_dribble_dx",
+    "dribble_static_sx": "stationary_shot_dribble_sx",
+    
+    # TIRO
+    "jumpshot_dx": "jumpshot_dx", "jumpshot_sx": "jumpshot_sx",
+    
+    # EXTRAS
+    "celly_lebron": "celly_lebron"
+}
+
+# ==================== HELPER FUNCTIONS ====================
+
+def convert_coords(nba_x, nba_y, nba_z):
+    return (nba_y, nba_x, nba_z)
+
+def calculate_distance_2d(pos1, pos2):
+    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
+
+def calculate_distance_3d(pos1, pos2):
+    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2 + (pos1[2] - pos2[2])**2)
+
+def load_metadata():
+    print(f"📂 Caricamento metadata...")
+    with open(METADATA_JSON, 'r') as f:
+        return json.load(f)
+
+def find_event_in_dataset(game_id, id):
+    print(f"🔍 Ricerca evento {id}...")
+    with open(DATASET_JSON, 'r', encoding='utf-8') as f:
+        try:
+            for line in f:
+                data = json.loads(line)
+                if str(data.get('gameid')) == str(game_id) and str(data['event_info']['id']) == str(id):
+                    return data
+
+        except:
+            f.seek(0)
+            for line in f: # Fallback riga per riga
+                try:
+                    data = json.loads(line.strip().rstrip(','))
+                    if str(data.get('gameid')) == str(game_id) and str(data.get('event_info', {}).get('id')) == str(id):
+                        return data
+                except: continue
+    raise Exception("Evento non trovato")
+
+def extract_shot_window(event, shot_frame):
+    moments = event['moments']
+
+    FPS_DATA = 25
+    frames_before = 3 * FPS_DATA  # 75 frame
+    frames_after = 2 * FPS_DATA   # 50 frame
+    # Protezione contro shot_frame fuori range
+    if shot_frame >= len(moments): 
+        print(f"⚠️ Shot frame {shot_frame} oltre la lunghezza dati. Reset a metà.")
+        shot_frame = len(moments) // 2
+        
+    # Estraiamo una finestra ampia per sicurezza
+    start_idx = max(0, shot_frame - frames_before)
+    end_idx = min(len(moments), shot_frame + 50)
+    new_shot_frame = shot_frame - start_idx
+    
+    return moments[start_idx:end_idx], new_shot_frame
+
+def get_trajectories(moments, player_id):
+    p_traj, b_traj = [], []
+    for m in moments:
+        b = m['ball_coordinates']
+        b_traj.append((b['x'], b['y'], b['z']))
+        found = False
+        for p in m['player_coordinates']:
+            if str(p['playerid']) == str(player_id):
+                p_traj.append((p['x'], p['y'], p['z']))
+                found = True
+                break
+        if not found: # Se il giocatore manca in un frame, usa l'ultimo noto
+            if p_traj: p_traj.append(p_traj[-1])
+            else: p_traj.append((0,0,0))
+    return p_traj, b_traj
+
+def analyze_possession(player_traj, ball_traj):
+    """Determina in quali frame il giocatore ha la palla in mano"""
+    possession_frames = []
+    for i, (p, b) in enumerate(zip(player_traj, ball_traj)):
+        dist = calculate_distance_2d(p[:2], b[:2])
+        if dist < POSSESSION_DISTANCE:
+            possession_frames.append(i)
+            
+    if possession_frames:
+        return possession_frames[0], possession_frames[-1], possession_frames
+    return None, None, []
+
+def calculate_speeds(traj):
+    speeds = [0.0]
+    for i in range(1, len(traj)):
+        speeds.append(calculate_distance_2d(traj[i-1], traj[i]))
+    return speeds
+
+def determine_basket_target(player_pos):
+    p_y = player_pos[1]
+    dist_1 = abs(p_y - BASKET_1[1])
+    dist_2 = abs(p_y - BASKET_2[1])
+    return BASKET_1 if dist_1 < dist_2 else BASKET_2
+
+def get_relative_side(player_pos, ball_pos, target_pos):
+    look_dir = (target_pos[0] - player_pos[0], target_pos[1] - player_pos[1])
+    ball_dir = (ball_pos[0] - player_pos[0], ball_pos[1] - player_pos[1])
+    cross_product = (look_dir[0] * ball_dir[1]) - (look_dir[1] * ball_dir[0])
+    return "sx" if cross_product > 0 else "dx"
+
+def is_ball_bouncing(ball_traj, current_frame, window=10, threshold=1):
+    start = max(0, current_frame - window)
+    end = min(len(ball_traj), current_frame + 1)
+    z_values = [b[2] for b in ball_traj[start:end]]
+    if not z_values: return False
+    return (max(z_values) - min(z_values)) > threshold
+
+def is_moving_backwards(player_pos, prev_player_pos, target_pos):
+    look_dx = target_pos[0] - player_pos[0]
+    look_dy = target_pos[1] - player_pos[1]
+    move_dx = player_pos[0] - prev_player_pos[0]
+    move_dy = player_pos[1] - prev_player_pos[1]
+    dot_product = (look_dx * move_dx) + (look_dy * move_dy)
+    return dot_product < -0.5
+
+# ==================== CORE LOGIC ====================
+
+def determine_state_sequence(p_traj, b_traj, speeds, shot_offset, shot_blender_start, shot_blender_end):
+    print("🧠 Calcolo stati (Logica v4 - Full Movement)...")
+    print(f"   📍 Shot window: {shot_blender_start} → {shot_blender_end}")  # ← AGGIUNGI
+    print(f"   📍 Total frames: {len(p_traj)}, moltiplicati: {int(len(p_traj) * FRAME_MULTIPLIER)}")  # ← AGGIUNGI
+    first_poss, _, _ = analyze_possession(p_traj, b_traj)
+    states = []
+
+    for i in range(len(p_traj)):
+        current_blender_frame = int(i * FRAME_MULTIPLIER)
+
+        # === PROTEZIONE TIRO (FORCE OVERRIDE) ===
+        # Se siamo nella finestra temporale del tiro, forziamo lo stato "SHOT"
+        # Ignoriamo qualsiasi calcolo di velocità o possesso.
+        if shot_blender_start <= current_blender_frame <= shot_blender_end:
+            states.append("SHOT")
+            continue
+
+        player_pos = p_traj[i]
+        prev_pos = p_traj[max(0, i-1)]
+        ball_pos = b_traj[i]
+        speed = speeds[i]
+        dist_ball = calculate_distance_2d(player_pos[:2], ball_pos[:2])
+        has_ball = dist_ball < POSSESSION_DISTANCE
+
+        if first_poss is None or i < first_poss:
+            look_target = b_traj[i] 
+        else:
+            look_target = determine_basket_target(player_pos)
+
+        # 1. DOPO IL TIRO 
+        if current_blender_frame > shot_blender_end:
+            if speed > 0.2 and is_moving_backwards(player_pos, prev_pos, look_target):
+                states.append("back_run")
+            elif speed > 5.5: states.append("fast_run")
+            elif speed > 3.0: states.append("slow_run")
+            elif speed > 0.2: states.append("walk")
+            else: states.append("idle")
+            continue
+
+        # 2. SENZA PALLA
+        if not has_ball:
+            if speed > 0.2 and is_moving_backwards(player_pos, prev_pos, look_target):
+                states.append("back_run")
+            elif speed > 5.5: states.append("fast_run")
+            elif speed > 3.0: states.append("slow_run")
+            elif speed > 0.2: states.append("walk")
+            else: states.append("idle")
+            continue
+            
+        # 3. CON PALLA
+        side = get_relative_side(player_pos, ball_pos, look_target)
+        past_idx = max(0, i-5)
+        past_dist = calculate_distance_2d(p_traj[past_idx][:2], b_traj[past_idx][:2])
+        is_catch_phase = (past_dist >= POSSESSION_DISTANCE and has_ball)
+        
+        if is_catch_phase and i > 5:
+            if speed > RUN_SPEED_THRESHOLD: states.append(f"run_catch_{side}")
+            else: states.append(f"static_catch_{side}")
+            continue
+
+        if speed > RUN_SPEED_THRESHOLD: states.append(f"dribble_run_{side}")
+        elif speed > WALK_SPEED_THRESHOLD: states.append(f"dribble_walk_{side}")
+        else:
+            if is_ball_bouncing(b_traj, i): states.append(f"dribble_static_{side}") 
+            else: states.append("holding") 
+    
+    # DEBUG: Verifica stati
+    print(f"📊 Distribuzione stati:")
+    from collections import Counter
+    counter = Counter(states)
+    for state, count in counter.most_common():
+        print(f"  {state}: {count} frames")
+
+    return states
+
+
+
+def create_sequential_strips(armature, state_sequence, shot_anim_name, p_traj):
+    print("🎬 Creazione Timeline Sequenziale (Anti-Sliding Universale v2)...")
+    
+    # 1. Setup Animazione
+    if not armature.animation_data:
+        armature.animation_data_create()
+    
+    # Pulizia TRACCE
+    while armature.animation_data.nla_tracks:
+        armature.animation_data.nla_tracks.remove(armature.animation_data.nla_tracks[0])
+        
+    # Pulizia AZIONE ATTIVA
+    armature.animation_data.action = None
+
+    main_track = armature.animation_data.nla_tracks.new()
+    main_track.name = "Main_Animation_Track"
+    
+    current_blender_frame = 0
+    nba_frame_index = 0
+    FRAME_GAP = 10
+
+    grouped_states = groupby(state_sequence)
+    
+    for state, group in grouped_states:
+        # Calcoliamo quanti frame NBA dura questo blocco
+        nba_frames_in_group = len(list(group))
+
+        # Calcoliamo durata in Blender (Tempo target sulla timeline)
+        duration_frames = int(nba_frames_in_group * FRAME_MULTIPLIER)
+        
+        if duration_frames <= 0: 
+            nba_frame_index += nba_frames_in_group
+            continue
+
+        # --- LOGICA DI SCALING UNIVERSALE ---
+        scale_factor = 1.0
+        
+        # Se lo stato ha una velocità di riferimento, calcoliamo l'anti-sliding
+        if state in SPEED_MAP:
+            reference_speed = SPEED_MAP[state]
+            
+            # 1. Calcola distanza reale percorsa in questo segmento (Piedi)
+            start_idx = nba_frame_index
+            end_idx = min(nba_frame_index + nba_frames_in_group, len(p_traj) - 1)
+            
+            segment_distance = 0.0
+            for k in range(start_idx, end_idx):
+                p1 = p_traj[k]
+                p2 = p_traj[k+1]
+                # Distanza 2D (X,Y) per ignorare salti verticali
+                dist = math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+                segment_distance += dist
+            
+            # 2. Calcola tempo reale in secondi (NBA @ 25 fps)
+            duration_seconds = nba_frames_in_group / FPS_JSON
+            
+            # 3. Calcola Velocità Target (Piedi/Secondo richiesti dal tracking)
+            target_speed = 0.0
+            if duration_seconds > 0:
+                target_speed = segment_distance / duration_seconds
+            
+            # 4. Calcola Scale NLA (Ref / Target)
+            # Se devo andare a 10 ft/s ma l'anim va a 5 ft/s -> Scale 0.5 (Velocizzo l'animazione)
+            if target_speed > 0.1: # Soglia minima per evitare divisioni assurde se è quasi fermo
+                raw_scale = reference_speed / target_speed
+                
+                # CLAMPING DI SICUREZZA (0.5x - 2.0x)
+                # Evita che l'animazione diventi ridicolmente veloce o lenta per errori nei dati
+                scale_factor = max(0.5, min(2.0, raw_scale))
+                
+                # Debug info per capire cosa succede
+                # print(f" ⚙️ {state} | Dist: {segment_distance:.1f}ft | Speed: {target_speed:.1f} f/s | Ref: {reference_speed} | Scale: {scale_factor:.3f}")
+            else:
+                scale_factor = 1.0 # Se la velocità target è quasi 0, non scalare (evita freeze)
+
+        # --- SELEZIONE AZIONE ---
+        action_name = ""
+        if state == "SHOT":
+            action_name = shot_anim_name
+        elif state in ANIM_MAP:
+            action_name = ANIM_MAP[state]
+        else:
+            action_name = ANIM_MAP.get("idle", "idle")
+            
+        if action_name not in bpy.data.actions:
+            print(f"❌ Azione mancante: {action_name}")
+            current_blender_frame += duration_frames
+            nba_frame_index += nba_frames_in_group
+            continue
+            
+        action = bpy.data.actions[action_name]
+
+        # Lunghezza frame originale dell'azione
+        source_duration = max(0.1, action.frame_range[1] - action.frame_range[0])
+        
+        # --- CREAZIONE STRIP ---
+        try:
+            strip = main_track.strips.new(
+                name=state,
+                start=int(current_blender_frame),
+                action=action
+            )
+
+            # Applica lo scale calcolato
+            strip.scale = scale_factor
+            
+            if state == "SHOT":
+                s_conf = SHOT_CONFIGS.get(shot_anim_name, DEFAULT_SHOT_CONFIG)
+                strip.action_frame_start = s_conf["crop"]
+                strip.action_frame_end = s_conf["end"]
+                strip.scale = 1.0 # Override: Il tiro NON si scala dinamicamente
+            else:
+                strip.action_frame_start = action.frame_range[0]
+                strip.action_frame_end = action.frame_range[1]
+                
+                # Calcola quante ripetizioni servono per coprire la durata temporale
+                # Formula: (Durata Blender / Scale Factor) / Durata Originale Azione
+                needed_action_frames = duration_frames / scale_factor
+                strip.repeat = needed_action_frames / source_duration
+
+            # Imposta la fine corretta sulla timeline
+            strip.frame_end = int(current_blender_frame + duration_frames - FRAME_GAP)
+
+            # Settings Blender
+            strip.blend_type = 'REPLACE'
+            strip.extrapolation = 'HOLD'
+            strip.use_auto_blend = False
+            
+            current_blender_frame = int(current_blender_frame + duration_frames)
+
+        except Exception as e:
+            print(f"Errore strip {state}: {e}")
+
+        nba_frame_index += nba_frames_in_group
+
+    print(f"✅ Timeline generata con Anti-Sliding su {len(SPEED_MAP)} stati.")
+
+def apply_transforms(obj, trajectory, b_traj, start_frame, first_poss):
+    """Applica posizione e rotazione corretta con interpolazione migliorata"""
+    is_ball = (obj.name == BALL_NAME)
+    
+    # Per la palla, inseriamo keyframe per OGNI frame Blender per ridurre il fluttuare
+    if is_ball:
+        for i in range(len(trajectory)):
+            frame = start_frame + int(i * FRAME_MULTIPLIER)
+            obj.location = convert_coords(*trajectory[i])
+            obj.keyframe_insert("location", frame=frame)
+            
+            # Interpolazione: aggiungi frame intermedi
+            if i < len(trajectory) - 1:
+                next_frame = start_frame + int((i + 1) * FRAME_MULTIPLIER)
+                frames_between = next_frame - frame
+                
+                if frames_between > 1:
+                    current_pos = trajectory[i]
+                    next_pos = trajectory[i + 1]
+                    
+                    for j in range(1, frames_between):
+                        interp_frame = frame + j
+                        alpha = j / frames_between
+                        
+                        interp_x = current_pos[0] + (next_pos[0] - current_pos[0]) * alpha
+                        interp_y = current_pos[1] + (next_pos[1] - current_pos[1]) * alpha
+                        interp_z = current_pos[2] + (next_pos[2] - current_pos[2]) * alpha
+                        
+                        obj.location = convert_coords(interp_x, interp_y, interp_z)
+                        obj.keyframe_insert("location", frame=interp_frame)
+    
+    # Per il giocatore
+    else:
+        for i, pos in enumerate(trajectory):
+            frame = int(start_frame + (i * FRAME_MULTIPLIER))
+            current_blender_frame = int(i * FRAME_MULTIPLIER)
+            
+            # Posizione (con interpolazione come la palla)
+            obj.location = convert_coords(*pos)
+            obj.keyframe_insert("location", frame=frame)
+            
+            # Interpolazione posizione
+            if i < len(trajectory) - 1:
+                next_frame = start_frame + int((i + 1) * FRAME_MULTIPLIER)
+                frames_between = next_frame - frame
+                
+                if frames_between > 1:
+                    current_pos = pos
+                    next_pos = trajectory[i + 1]
+                    
+                    for j in range(1, frames_between):
+                        interp_frame = frame + j
+                        alpha = j / frames_between
+                        
+                        interp_x = current_pos[0] + (next_pos[0] - current_pos[0]) * alpha
+                        interp_y = current_pos[1] + (next_pos[1] - current_pos[1]) * alpha
+                        interp_z = current_pos[2] + (next_pos[2] - current_pos[2]) * alpha
+                        
+                        obj.location = convert_coords(interp_x, interp_y, interp_z)
+                        obj.keyframe_insert("location", frame=interp_frame)
+            
+            pb = convert_coords(*pos)
+
+            # Determina cosa guardare
+            if first_poss is None or i < first_poss:
+                # PRIMA del possesso: guarda la palla
+                target = convert_coords(*b_traj[i])
+                angle_offset = 0  # Nessun offset per la palla
+            else:
+                # DURANTE o DOPO il possesso: guarda il canestro
+                basket = determine_basket_target(pos)
+                target = convert_coords(basket[1], basket[0], 10.0)
+                angle_offset = math.radians(+90)  # Offset di -90 gradi (antiorario)
+
+            dx = target[0] - pb[0]
+            dy = target[1] - pb[1]
+            angle = math.atan2(dy, dx) + angle_offset  # Aggiungi l'offset
+
+            obj.rotation_euler.z = angle
+            obj.keyframe_insert("rotation_euler", frame=frame)
+            
+            # Interpolazione rotazione
+            if i < len(trajectory) - 1:
+                next_frame = start_frame + int((i + 1) * FRAME_MULTIPLIER)
+                frames_between = next_frame - frame
+                
+                if frames_between > 1:
+                    # Calcola angolo successivo
+                    next_pos = trajectory[i + 1]
+                    next_pb = convert_coords(*next_pos)
+                    
+                    if first_poss is None or (i + 1) < first_poss:
+                        next_target = convert_coords(*b_traj[i + 1])
+                        next_angle_offset = 0
+                    else:
+                        next_basket = determine_basket_target(next_pos)
+                        next_target = convert_coords(next_basket[1], next_basket[0], 10.0)
+                        next_angle_offset = math.radians(+90)
+                    next_dx = next_target[0] - next_pb[0]
+                    next_dy = next_target[1] - next_pb[1]
+                    next_angle = math.atan2(next_dy, next_dx) + next_angle_offset
+                    
+                    # Interpola angoli (gestendo wrap-around)
+                    angle_diff = next_angle - angle
+                    if angle_diff > math.pi:
+                        angle_diff -= 2 * math.pi
+                    elif angle_diff < -math.pi:
+                        angle_diff += 2 * math.pi
+                    
+                    for j in range(1, frames_between):
+                        interp_frame = frame + j
+                        alpha = j / frames_between
+                        interp_angle = angle + angle_diff * alpha
+                        
+                        obj.rotation_euler.z = interp_angle
+                        obj.keyframe_insert("rotation_euler", frame=interp_frame)
+
+def extract_gaps_from_nla_post_process():
+    """
+    Legge le strip già create nella NLA Track ed esporta i dati dei buchi.
+    """
+    print("\n🔍 AVVIO ISPETTORE NLA (Post-Process)...")
+    
+    obj = bpy.data.objects.get("Armature")
+    if not obj or not obj.animation_data:
+        print("❌ Errore: Nessuna armatura o dati animazione trovati.")
+        return
+
+    # Trova la traccia giusta
+    track = None
+    for t in obj.animation_data.nla_tracks:
+        if "Main" in t.name: # Cerca la traccia principale
+            track = t
+            break
+    
+    if not track:
+        # Fallback: prendi la prima
+        if obj.animation_data.nla_tracks:
+            track = obj.animation_data.nla_tracks[0]
+        else:
+            print("❌ Nessuna NLA Track trovata.")
+            return
+
+    # Ordina le strip per frame di inizio (fondamentale!)
+    strips = sorted(track.strips, key=lambda s: s.frame_start)
+    
+    found_gaps = []
+    
+    print(f"👀 Analisi di {len(strips)} strip sulla traccia '{track.name}'...")
+
+    for i in range(len(strips) - 1):
+        strip_a = strips[i]
+        strip_b = strips[i+1]
+        
+        # Calcolo del buco temporale (Fine A -> Inizio B)
+        gap_duration = strip_b.frame_start - strip_a.frame_end
+        
+        # Calcolo preciso del "Cut Point" (frame interno all'azione)
+        # Formula: Start_Action + (Durata_Strip_Timeline / Scale)
+        duration_timeline_a = strip_a.frame_end - strip_a.frame_start
+        cut_frame_end_a = strip_a.action_frame_start + (duration_timeline_a / strip_a.scale)
+        
+        cut_frame_start_b = strip_b.action_frame_start
+        
+        # Salviamo TUTTI i gap che sembrano intenzionali (> 1 frame)
+        # Anche quelli strani, così poi scegliamo noi quale usare
+        if gap_duration > 1.0: 
+            gap_info = {
+                "index": len(found_gaps), # 0, 1, 2...
+                "frame_start_timeline": strip_a.frame_end,
+                "frame_end_timeline": strip_b.frame_start,
+                "gap_duration": gap_duration,
+                "clip_a": {
+                    "name": strip_a.name,
+                    "action_name": strip_a.action.name if strip_a.action else "Unknown",
+                    "scale": strip_a.scale,
+                    "cut_frame_end": cut_frame_end_a
+                },
+                "clip_b": {
+                    "name": strip_b.name,
+                    "action_name": strip_b.action.name if strip_b.action else "Unknown",
+                    "scale": strip_b.scale,
+                    "cut_frame_start": cut_frame_start_b
+                }
+            }
+            found_gaps.append(gap_info)
+            print(f"   ✅ Gap #{len(found_gaps)-1} rilevato: {strip_a.name} -> {strip_b.name} ({gap_duration:.1f} frames)")
+
+    # SALVATAGGIO JSON
+    output_path = os.path.join(BASE_PATH, "baby_step/gap_export.json")
+    with open(output_path, 'w') as f:
+        json.dump(found_gaps, f, indent=4)
+        
+    print(f"💾 Dati salvati in: {output_path}")
+    print("="*50)
+# ==================== MAIN ====================
+
+def main():
+    print("="*50)
+    print("🚀 AVVIO SCRIPT SYNC TIRO (FINAL FIX)")
+    print("="*50)
+    
+    try:
+        metadata = load_metadata()
+        event = find_event_in_dataset(metadata['game_id'], metadata['event_id'])
+        moments, shot_offset = extract_shot_window(event, metadata['shot_frame'])
+        p_traj, b_traj = get_trajectories(moments, metadata['player_id'])
+        speeds = calculate_speeds(p_traj)
+        
+        poss_start, poss_end, _ = analyze_possession(p_traj, b_traj)
+
+        shot_idx = min(shot_offset, len(p_traj)-1)
+        basket_target = determine_basket_target(p_traj[shot_idx])
+        shot_side = get_relative_side(p_traj[shot_idx], b_traj[shot_idx], basket_target)
+        shot_anim_key = f"jumpshot_{shot_side}"
+        shot_anim_real_name = ANIM_MAP.get(shot_anim_key, "jumpshot_dx")
+        
+        print(f"🏀 Tiro: {shot_anim_real_name} ({shot_side})")
+        
+        # === MODIFICA: CALCOLO DINAMICO DX/SX ===
+        # 1. Recuperiamo i parametri specifici per questo tiro
+        s_conf = SHOT_CONFIGS.get(shot_anim_real_name, DEFAULT_SHOT_CONFIG)
+        
+        # 2. Calcoliamo il picco sulla timeline di Blender
+        blender_shot_peak = shot_offset * FRAME_MULTIPLIER
+        
+        # 3. Calcoliamo quanti frame "utili" ci sono prima del rilascio (Release - Start)
+        # Es. DX: 144 - 50 = 94 frame prima del picco
+        frames_before_peak = s_conf["release"] - s_conf["crop"]
+        
+        # 4. Calcoliamo quanti frame ci sono dopo il rilascio (End - Release)
+        # Es. DX: 340 - 144 = 196 frame dopo il picco
+        frames_after_peak = s_conf["end"] - s_conf["release"]
+        
+        # 5. Definiamo inizio e fine sulla timeline globale
+        shot_blender_start = blender_shot_peak - frames_before_peak
+        shot_blender_end = blender_shot_peak + frames_after_peak
+
+        states = determine_state_sequence(p_traj, b_traj, speeds, shot_offset, shot_blender_start, shot_blender_end)
+        print(f"🧠 Stati: {list(set(states))}")
+
+        armature = bpy.data.objects[ARMATURE_NAME]
+        ball = bpy.data.objects[BALL_NAME]
+        
+        # FIX: Pulizia azione attiva
+        if armature.animation_data:
+            armature.animation_data.action = None
+
+        create_sequential_strips(armature, states, shot_anim_real_name, p_traj)
+
+        look_target_traj = []
+        for p in p_traj:
+            b = determine_basket_target(p)
+            look_target_traj.append((b[0], b[1], 10.0))
+
+        apply_transforms(armature, p_traj, b_traj, 1, poss_start)
+        apply_transforms(ball, b_traj, b_traj, 1, None)
+        
+        bpy.context.scene.frame_start = 1
+        bpy.context.scene.frame_end = int(len(p_traj) * FRAME_MULTIPLIER)
+        bpy.context.scene.render.fps = FPS_ANIMATION
+        # === AGGIUNTA ESTRATTORE ===
+        extract_gaps_from_nla_post_process()
+        
+        print("✅ FINE.")
+        
+        
+    except Exception as e:
+        print(f"❌ ERRORE: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    main()

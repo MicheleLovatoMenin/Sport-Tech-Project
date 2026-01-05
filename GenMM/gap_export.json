@@ -1,0 +1,128 @@
+[
+    {
+        "index": 0,
+        "frame_start_timeline": -6.0,
+        "frame_end_timeline": 4.0,
+        "gap_duration": 10.0,
+        "clip_a": {
+            "name": "idle",
+            "action_name": "idle",
+            "scale": 1.0,
+            "cut_frame_end": -5.0
+        },
+        "clip_b": {
+            "name": "walk",
+            "action_name": "walk",
+            "scale": 0.5498235821723938,
+            "cut_frame_start": 1.0
+        }
+    },
+    {
+        "index": 1,
+        "frame_start_timeline": 61.0,
+        "frame_end_timeline": 71.0,
+        "gap_duration": 10.0,
+        "clip_a": {
+            "name": "walk",
+            "action_name": "walk",
+            "scale": 0.5498235821723938,
+            "cut_frame_end": 104.66961667011219
+        },
+        "clip_b": {
+            "name": "idle.001",
+            "action_name": "idle",
+            "scale": 1.0,
+            "cut_frame_start": 1.0
+        }
+    },
+    {
+        "index": 2,
+        "frame_start_timeline": 99.0,
+        "frame_end_timeline": 109.0,
+        "gap_duration": 10.0,
+        "clip_a": {
+            "name": "idle.001",
+            "action_name": "idle",
+            "scale": 1.0,
+            "cut_frame_end": 29.0
+        },
+        "clip_b": {
+            "name": "back_run",
+            "action_name": "back_run",
+            "scale": 0.6528174877166748,
+            "cut_frame_start": 1.0
+        }
+    },
+    {
+        "index": 3,
+        "frame_start_timeline": 247.0,
+        "frame_end_timeline": 257.0,
+        "gap_duration": 10.0,
+        "clip_a": {
+            "name": "back_run",
+            "action_name": "back_run",
+            "scale": 0.6528174877166748,
+            "cut_frame_end": 212.39139590557738
+        },
+        "clip_b": {
+            "name": "static_catch_dx",
+            "action_name": "static_catch_dx",
+            "scale": 1.0,
+            "cut_frame_start": 1.0
+        }
+    },
+    {
+        "index": 4,
+        "frame_start_timeline": 256.0,
+        "frame_end_timeline": 266.0,
+        "gap_duration": 10.0,
+        "clip_a": {
+            "name": "static_catch_dx",
+            "action_name": "static_catch_dx",
+            "scale": 1.0,
+            "cut_frame_end": 0.0
+        },
+        "clip_b": {
+            "name": "jumpshot_dx",
+            "action_name": "jumpshot_dx",
+            "scale": 1.0,
+            "cut_frame_start": 50.0
+        }
+    },
+    {
+        "index": 5,
+        "frame_start_timeline": 548.0,
+        "frame_end_timeline": 558.0,
+        "gap_duration": 10.0,
+        "clip_a": {
+            "name": "jumpshot_dx",
+            "action_name": "jumpshot_dx",
+            "scale": 1.0,
+            "cut_frame_end": 332.0
+        },
+        "clip_b": {
+            "name": "idle.002",
+            "action_name": "idle",
+            "scale": 1.0,
+            "cut_frame_start": 1.0
+        }
+    },
+    {
+        "index": 6,
+        "frame_start_timeline": 557.0,
+        "frame_end_timeline": 567.0,
+        "gap_duration": 10.0,
+        "clip_a": {
+            "name": "idle.002",
+            "action_name": "idle",
+            "scale": 1.0,
+            "cut_frame_end": 0.0
+        },
+        "clip_b": {
+            "name": "walk.001",
+            "action_name": "walk",
+            "scale": 0.9373281598091125,
+            "cut_frame_start": 1.0
+        }
+    }
+]

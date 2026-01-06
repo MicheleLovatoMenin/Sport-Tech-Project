@@ -9,6 +9,10 @@
 
 ## Overview
 
+
+https://github.com/user-attachments/assets/d86e6cea-37a2-4347-8f7e-94f915ef17e6
+
+
 This project presents a novel pipeline for the **realistic virtualization of basketball 3-point shooting** using *sparse* open-source data.
 
 Commercial leaders in sports analytics (like Genius Sports or Beyond Sports) typically rely on expensive, hardware-intensive optical tracking systems to extract dense skeletal data. Our approach democratizes this technology by synthesizing realistic 3D actions from **single-point 2D tracking data** (X, Y coordinates of players and X, Y and Z of the ball) from the NBA 2015-2016 season.
@@ -100,6 +104,11 @@ To explore the interactive dashboard and view previously reconstructed shots:
 
 
 https://github.com/user-attachments/assets/e8ed39c1-40a9-4b9b-b524-6057dbe1bdd2
+
+
+
+https://github.com/user-attachments/assets/cd6da438-a2dd-444a-a16a-7b0fa5bc5f7e
+
 
 
 

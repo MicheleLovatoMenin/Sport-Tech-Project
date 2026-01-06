@@ -15,6 +15,8 @@ Commercial leaders in sports analytics (like Genius Sports or Beyond Sports) typ
 
 By leveraging ball dynamics to logically infer missing player motion, we transform raw tracking data into coherent, smooth 3D animations without the need for proprietary datasets.
 
+
+
 ## Key Features
 
 * **Sparse-to-Dense Reconstruction:** Generates complex 3D representations using only 2D positions and open-source datasets.
@@ -33,8 +35,7 @@ The system operates on a rule-based logic implementation that maps 2D coordinate
 graph TD
     A[SportVu Dataset] -->|shot_frame.py| B(shot_metadata.json)
     B -->|rule_based_blend.py| C[Smooth Animation Sequence]
-    C -->|export.py| D[Smooth Animation GLB]
-    D --> E[Web Dashboard]
+    C -->|export| D[Web Dashboard]
 ```
 
 ### 1. Data Extraction & Logic
@@ -53,10 +54,7 @@ The core virtualization takes place in **Blender** using the `rule_based.py` scr
 * **Action Window:** The system generates a coherent 5-second sequence around the shot frame: **3 seconds pre-shot** and **2 seconds post-shot**.
 * **Logic:** It maps the sparse 2D coordinates to a library of MOCAP-style animations using ball and speed constraints. Crucially, the script places these animation blocks onto the timeline using a 5-frame blend to create smooth transitions.
 
-### 3. Export (DA SISTEMARE)
-* **Result:** The system synthesizes fluid, physically realistic transitions between the pre-shot dribble, the jump shot, and the landing, creating a continuous 3D mesh. The final result is exported as a `.glb` file.
-
-### 4. Web Visualization
+### 3. Web Visualization
 * The final output is a `.glb` file.
 * The web platform reads `shots_data.json`to populate the dashboard and renders the 3D files.
 
@@ -71,13 +69,15 @@ The core virtualization takes place in **Blender** using the `rule_based.py` scr
     pip install -r requirements.txt
     ```
 * **Directory:**
-For each file that is launched in Blender (`rule_based_blend.py`, `rule_based_genMM.py`), you must manually modify the base directory.
+For each file that is launched in Blender (`rule_based_blend.py`), you must manually modify the base directory (BASE_PATH).
 
 ### Dataset Setup
-1.  **Download Data:** Acquire the **NBA Tracking Data (2015-16)** from HuggingFace:
-    [HuggingFace Dataset Link](https://huggingface.co/datasets/dcayton/nba_tracking_data_15_16?)
-    For simplicity, you can install the tiny format (only 5 matches).
-3.  **Placement:** Place the dataset in the root directory (or ensure the paths in `shot_frame.py` and `rule_based_blend.py` match your local folder structure).
+**Download Data:** Acquire the **NBA Tracking Data (2015-16)** from HuggingFace:
+[HuggingFace Dataset Link](https://huggingface.co/datasets/dcayton/nba_tracking_data_15_16?)
+For simplicity, you can install the tiny format (only 5 matches) using this script.
+```bash
+python download_nba_data.py
+```
 
 ---
 
@@ -132,11 +132,26 @@ python shot_frame_adj.py --game_id 0021500333 --event_id 179
     * *Process:* This script reads the `shot_metadata.json` file generated in Step A.
     * *Logic:* It constructs a **5-second animation window** (3 seconds before the shot, 2 seconds after). It places the animations on the timeline using rule-based logic and creates smooth transitions between animations.
 
-#### Step C: Export (DA SISTEMARE)
-Once the base animation is arranged in Blender, run the smoothing script:
-```bash
-python export.py
-```
+#### Step C: Export
+Once the base animation is arranged in Blender, proceed with the manual export using the specific settings below:
+
+1. Navigate to **File > Export > glTF 2.0 (.glb/.gltf)**.
+2. Ensure the **Format** is set to `glTF Binary (.glb)`.
+3. In the right-hand panel, configure the settings as follows:
+
+* **Transform**
+  * [x] +Y Up
+* **Data**
+  * [x] Shape Keys
+  * [x] Skinning
+* **Animation**
+  * **Animation mode:** `Scene`
+  * [x] Split Animation by Object
+  * [x] Shape Keys Animation
+  * [x] Sampling Animations
+  * [ ] Optimize Animations *(Unchecked)*
+
+4. Select the destination folder and click **Export glTF 2.0**.
 
 * **Final Output:** The script exports the finished animation as a `.glb` file into the web assets folder, ready for the dashboard.
 

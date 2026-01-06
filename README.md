@@ -50,7 +50,7 @@ We use the **SportVu** dataset (HuggingFace).
 **Output:** Both scripts generate `shot_metadata.json` (for the current specific action) and append the entry to `shots_data.json` (the cumulative database used by the frontend).
 
 ### 2. Rule-Based Reconstruction (Blender)
-The core virtualization takes place in **Blender** using the `rule_based.py` script.
+The core virtualization takes place in **Blender** using the `rule_based_blend.py` script.
 * **Action Window:** The system generates a coherent 5-second sequence around the shot frame: **3 seconds pre-shot** and **2 seconds post-shot**.
 * **Logic:** It maps the sparse 2D coordinates to a library of MOCAP-style animations using ball and speed constraints. Crucially, the script places these animation blocks onto the timeline using a 5-frame blend to create smooth transitions.
 
@@ -92,13 +92,10 @@ To explore the interactive dashboard and view previously reconstructed shots:
     ```bash
     python backend.py
     ```
-2.  **Start the Frontend:**
-    ```bash
-    python frontend.py
-    ```
+
 3.  **Access the Dashboard:**
    
-    Open your browser to `http://localhost:5000` (or the port specified in the terminal). You will see a 2D view of the court. Markers indicate shot locations: **X** (Missed) and **O** (Made). Use the dropdown menu to filter shots by Player, Team, or Game ID. Click on any marker to load the **360° interactive 3D viewer** for that specific action.
+    Open your browser to `https://127.0.0.1:5500/frontend.html` (or the port specified in the terminal). You will see a 2D view of the court. Markers indicate shot locations: **X** (Missed) and **O** (Made). Use the dropdown menu to filter shots by Player, Team, or Game ID. Click on any marker to load the **360° interactive 3D viewer** for that specific action.
 
 
 
@@ -127,7 +124,7 @@ python shot_frame_adj.py --game_id 0021500333 --event_id 179
 
 #### Step B: Blender Reconstruction
 1.  **Open Blender:** Launch blender manually.
-2.  **Load Environment:** Open the `basket_ambient.blend` file.
+2.  **Load Environment:** Open the `basket_environment.blend` file.
 3.  **Run Script:** run `rule_based_blend.py`on blender (Blender → Workspace "Scripting" → Open script → Run).
     * *Process:* This script reads the `shot_metadata.json` file generated in Step A.
     * *Logic:* It constructs a **5-second animation window** (3 seconds before the shot, 2 seconds after). It places the animations on the timeline using rule-based logic and creates smooth transitions between animations.
@@ -177,14 +174,17 @@ This folder contains the tools and resources for the **Generative Motion Matchin
 ### 2. `Comparison/` (Raw Data Visualization)
 This directory contains tools to validate the raw SportVu data against our 3D reconstructions.
 
-* **Script:** `visualize_raw_tracking.py` (run within Blender).
+* **Old Environment Creation:** If the user wants to create `old_environment.blend`, they can do so by using the  `creation_environment_old.py`. 
+* **Script:** `visualize_raw_tracking.py` (run within Blender using `old_environment.blend`).
 * **Function:** By selecting a `game_id` and `event_id`, users can visualize the exact tracking data from the source file.
 * **Visual Output:** The scene renders **all 10 players and the ball** moving according to their raw X/Y coordinates. Note that in this mode, player meshes are **static** (no skeletal animation) and simply "slide" across the court. This serves as a baseline to demonstrate the value added by our reconstruction pipeline.
 
 ### 3. `environment_creation/`
-These scripts were used to build the foundational Blender environment (`Basket_ambient.blend`) and can be used to regenerate or modify the scene.
+These scripts were used to build the foundational Blender environment (`basket_environment.blend`) and can be used to regenerate or modify the scene.
 
+* In Blender navigate to **File > Import > FBX (.fbx) > select the `X_Bot.fbx` file**.
 * **`setup_in_place.py`:** Batch loads the MOCAP animation library into Blender, configuring them as "in-place" animations ready for the rule-based logic.
+* **`setup_in_place2.py`:** Similar to the first script, but with a new batch of MOCAP animations. 
 * **`environment_creation.py`:** Procedurally generates the 3D environment, including the basketball court geometry, ball object initialization, and global scaling factors.
 
 ---

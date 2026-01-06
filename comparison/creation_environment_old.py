@@ -3,466 +3,224 @@ import os
 
 BASE_PATH = r"D:\VS CODE DIRECTORY\PYTHON\SPORT_TECH"
 
-COURT_FILE = "basketball_court.glb"
-
-PLAYER_FILE = "low_poly_male_base_mesh.glb"
-
-
-
-# Il file .blend è in una sottocartella, quindi ho specificato il percorso completo
-
-BALL_BLEND_PATH = r"D:\VS CODE DIRECTORY\PYTHON\SPORT_TECH\basketballball_v31_cycles\basketballball_v3.1_Cycles.blend"
-
-
-
-# Nome oggetto palla 
-
+COURT_FILE = "objects/basketball_court.glb"
+PLAYER_FILE = "objects/base_mesh.glb"
+BALL_FILE = "objects/ball.blend"
 BALL_OBJECT_NAME_IN_BLEND = "bbc_ball_body"
 
-
-
-# Valori di correzione 
-
+# Correction values
 COURT_SCALE = (3.355, 3.355, 3.355)
-
 PLAYER_SCALE = (3.48, 3.48, 3.48)
-
 BALL_SCALE = (3.3, 3.3, 3.3) 
 
-
-
-# ** NOTA IMPORTANTE SULLA POSIZIONE **
-
-# I dati CSV (0-94 piedi) non partono da 0 al centro, ma da un angolo.
-
-# Per far combaciare i dati, il campo (che ora è 94x50) 
-
-# deve essere centrato a (47, 25, 0).
-
 COURT_LOCATION = (25, 47, 0)
-
 COURT_ROTATION = (0, 0, 0)
 
 
-
-
-
-# --- 1. Pulizia della Scena ---
-
+# Scene Cleanup
 if bpy.data.objects:
-
     bpy.ops.object.select_all(action='SELECT')
-
     bpy.ops.object.delete()
 
 
+# Asset Import
 
-# --- 2. Importazione Asset ---
-
-
-
-# --- A. Importa il Campo da Basket (.glb) ---
-
+# Import Basketball Court
 try:
-
     court_path = os.path.join(BASE_PATH, COURT_FILE)
-
     bpy.ops.import_scene.gltf(filepath=court_path)
-
     court_obj = bpy.context.active_object
-
     court_obj.name = "Court"
-
-    print(f"Campo '{COURT_FILE}' importato come 'Court'")
-
+    print(f"Court '{COURT_FILE}' imported as 'Court'")
 except Exception as e:
-
-    print(f"ERRORE importazione campo: {e}")
-
+    print(f"ERROR importing court: {e}")
 
 
-# --- B. Importa il Giocatore Template (.glb) ---
-
+# Import Player Template
 try:
-
     player_path = os.path.join(BASE_PATH, PLAYER_FILE)
-
     bpy.ops.import_scene.gltf(filepath=player_path)
-
     player_template_obj = bpy.context.active_object
-
     player_template_obj.name = "player_template"
-
-    print(f"Giocatore '{PLAYER_FILE}' importato come 'player_template'")
-
+    print(f"Player '{PLAYER_FILE}' imported as 'player_template'")
 except Exception as e:
-
-    print(f"ERRORE importazione giocatore: {e}")
-
+    print(f"ERROR importing player: {e}")
 
 
-# --- C. "Appendi" la Palla dal file (.blend) ---
-
+# Append the Ball from blend file
 try:
-
     obj_name = BALL_OBJECT_NAME_IN_BLEND
 
-    
+    BALL_BLEND_PATH = os.path.join(BASE_PATH, BALL_FILE)
 
     with bpy.data.libraries.load(BALL_BLEND_PATH, link=False) as (data_from, data_to):
-
-        # Cerca l'oggetto palla nella sezione 'objects' del file .blend
-
         if obj_name in data_from.objects:
-
             data_to.objects = [obj_name]
-
         else:
-
-            print(f"ERRORE: Oggetto '{obj_name}' NON TROVATO in {BALL_BLEND_PATH}")
-
-
-
-    # Ora "istanzia" l'oggetto palla nella scena
-
-    # (A volte Blender aggiunge .001 se il nome esiste già)
+            print(f"ERROR: Object '{obj_name}' NOT FOUND in {BALL_BLEND_PATH}")
 
     if obj_name in bpy.data.objects:
-
         ball_obj = bpy.data.objects[obj_name]
-
     elif f"{obj_name}.001" in bpy.data.objects:
-
         ball_obj = bpy.data.objects[f"{obj_name}.001"]
-
     else:
-
-        # Se non lo trova, potrebbe essere già nella scena ma non selezionato
-
-        # Come ultima risorsa, lo cerchiamo
-
         found = False
-
         for obj in bpy.context.scene.objects:
-
             if obj.name.startswith(obj_name):
-
                 ball_obj = obj
-
                 found = True
-
                 break
-
         if not found:
+             raise Exception(f"Unable to find ball object {obj_name} after append.")
 
-             raise Exception(f"Impossibile trovare l'oggetto palla {obj_name} dopo l'append.")
-
-
-
-    ball_obj.name = "ball" # Rinomina standard
-
-    bpy.context.collection.objects.link(ball_obj) # Assicura sia nella collezione principale
-
-    print(f"Palla '{obj_name}' appesa come 'ball'")
-
+    ball_obj.name = "ball"
+    if ball_obj.name not in bpy.context.collection.objects:
+        bpy.context.collection.objects.link(ball_obj) # Ensure it is in the main collection
+    
+    print(f"Ball '{obj_name}' appended as 'ball'")
         
-
 except Exception as e:
-
-    print(f"ERRORE append palla: {e}")
-
+    print(f"ERROR appending ball: {e}")
 
 
-
-
-# --- 3. Standardizzazione (CON I TUOI VALORI) ---
-
-print("Inizio standardizzazione...")
-
-
+# Standardization
+print("Starting standardization...")
 
 if "Court" in bpy.data.objects:
-
     court_obj = bpy.data.objects["Court"]
-
     court_obj.location = COURT_LOCATION
-
     court_obj.rotation_euler = COURT_ROTATION
-
     court_obj.scale = COURT_SCALE
-
-    print("Campo standardizzato.")
-
+    print("Court standardized.")
     
 
-    # --- Modifica aggiuntiva per Tabelloni e Canestri ---
-
-    print("Applico scala Z aggiuntiva a tabelloni e canestri...")
-
+    print("Applying additional Z scale to backboards and rims...")
     
-
-    # Lista dei prefissi dei nomi degli oggetti da modificare
 
     prefixes_to_scale = [
-
         "Basketball_Backboard",
-
         "Basketball_Rim"
-
     ]
 
 
-
-    # Itera su TUTTI gli oggetti presenti nella scena
-
     for obj in bpy.data.objects:
 
-        # Controlla se il nome dell'oggetto inizia con uno dei prefissi
-
         for prefix in prefixes_to_scale:
-
             if obj.name.startswith(prefix):
-
-                # Trovato! Applica la scala Z *moltiplicandola* a quella esistente
-
-                # Questo è fondamentale: moltiplichi 3.355 * 1.05
-
                 obj.scale.z = obj.scale.z * 1.023
-
-                # Passa all'oggetto successivo
-
                 break 
-
                 
-
-    print("Scala Z di tabelloni e canestri modificata.")
-
+    print("Backboard and rim Z scale modified.")
 else:
-
-    print("Oggetto 'Court' non trovato per la standardizzazione.")
-
-
-
-    
-
-
-
+    print("Object 'Court' not found for standardization.")
 
 
 if "player_template" in bpy.data.objects:
-
     player_template_obj = bpy.data.objects["player_template"]
-
     player_template_obj.location = (25, 2, 0) 
-
     player_template_obj.rotation_euler = (0, 0, 0)
-
     player_template_obj.scale = PLAYER_SCALE
-
-    print("Template giocatore standardizzato.")
-
+    print("Player template standardized.")
 else:
-
-    print("Oggetto 'player_template' non trovato per la standardizzazione.")
-
+    print("Object 'player_template' not found for standardization.")
 
 
 if "ball" in bpy.data.objects:
-
     ball_obj = bpy.data.objects["ball"]
-
     ball_obj.location = (0, 0, 0)
-
     ball_obj.rotation_euler = (0, 0, 0)
-
-    ball_obj.scale = BALL_SCALE # Usa la scala segnaposto
-
-    print("Palla standardizzata (aggiusta la scala se necessario).")
-
+    ball_obj.scale = BALL_SCALE # Use placeholder scale
+    print("Ball standardized (adjust scale if necessary).")
 else:
-
-    print("Oggetto 'ball' non trovato per la standardizzazione.")
-
+    print("Object 'ball' not found for standardization.")
 
 
+# Player Duplication (With Team Colors)
 
+# Create team materials
+print("Creating team materials...")
 
-# --- 4. Duplicazione Giocatori (Con Colori Squadra E FIX) ---
-
-
-
-# --- A. Crea i materiali per le squadre ---
-
-print("Creazione materiali squadre...")
-
-
-
-# Colore Squadra A (Rosso)
-
+# Team A Color (Red)
 try:
-
     team_a_mat = bpy.data.materials.new(name="Team_A_Material")
-
     team_a_mat.use_nodes = True
-
-    team_a_mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.0, 0.0, 1.0) # RGBA (Rosso)
-
-    print("Creato materiale Team A (Rosso).")
-
+    team_a_mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.0, 0.0, 1.0) # RGBA (Red)
+    print("Created Team A material (Red).")
 except Exception as e:
+    print(f"Error creating Team A material: {e}")
 
-    print(f"Errore creazione materiale Team A: {e}")
-
-
-
-# Colore Squadra B (Blu)
-
+# Team B Color (Blue)
 try:
-
     team_b_mat = bpy.data.materials.new(name="Team_B_Material")
-
     team_b_mat.use_nodes = True
-
-    team_b_mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.0, 0.0, 0.8, 1.0) # RGBA (Blu)
-
-    print("Creato materiale Team B (Blu).")
-
+    team_b_mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.0, 0.0, 0.8, 1.0) # RGBA (Blue)
+    print("Created Team B material (Blue).")
 except Exception as e:
-
-    print(f"Errore creazione materiale Team B: {e}")
-
+    print(f"Error creating Team B material: {e}")
 
 
-# --- Funzione Helper per trovare la mesh ---
-
+# Helper Function to find the mesh
 def find_first_mesh(obj):
-
     """
-
-    Cerca ricorsivamente nei figli di 'obj' 
-
-    per trovare il primo oggetto di tipo 'MESH'.
-
+    Recursively searches children of 'obj' 
+    to find the first object of type 'MESH'.
     """
-
     if obj.type == 'MESH':
-
         return obj
-
     for child in obj.children:
-
         found = find_first_mesh(child)
-
         if found:
-
             return found
-
     return None
 
 
-
-# --- B. Duplica e assegna i materiali ---
-
+# Duplicate and assign materials
 if "player_template" in bpy.data.objects:
-
     
-
-    # Questo è il contenitore "Empty" (es. 'player_template')
-
+   
     root_template_obj = bpy.data.objects["player_template"]
-
     
-
-    # Usiamo la funzione helper per trovare la VERA mesh al suo interno
-
+    # We use the helper function to find the REAL mesh inside it
     player_mesh_template = find_first_mesh(root_template_obj)
-
     
-
     if player_mesh_template is None:
-
-        print("ERRORE CRITICO: Non è stata trovata nessuna mesh (giocatore) all'interno di 'player_template'.")
-
+        print("CRITICAL ERROR: No mesh (player) found inside 'player_template'.")
     else:
-
-        print(f"Trovata mesh template: '{player_mesh_template.name}'")
-
+        print(f"Found mesh template: '{player_mesh_template.name}'")
         
-
         for i in range(10):
-
-            # Copiamo l'oggetto mesh, NON l'empty
-
+            
             new_player = player_mesh_template.copy()
-
-            
-
-            # Copiamo i dati della mesh (fondamentale per materiali unici)
-
             new_player.data = player_mesh_template.data.copy() 
-
             new_player.name = f"player_{i}"
-
             
-
-            # Assegna il materiale corretto
-
+            # Assign correct material
             if i < 5:
-
-                # Squadra A (Giocatori 0-4)
-
                 new_player.data.materials.clear() 
-
                 new_player.data.materials.append(team_a_mat)
-
             else:
-
-                # Squadra B (Giocatori 5-9)
-
                 new_player.data.materials.clear() 
-
                 new_player.data.materials.append(team_b_mat)
-
                 
-
-            # Collega il nuovo giocatore alla scena
-
+            # Link new player to scene
             bpy.context.collection.objects.link(new_player)
 
-
-
-        # Nascondi l'intero template originale (l'Empty e tutti i suoi figli)
-
+        # Hide the entire original template
         root_template_obj.hide_set(True) 
-
-        print("Creati 10 cloni di giocatori e colorati per squadra.")
-
+        print("Created 10 player clones and colored by team.")
         
-
 else:
-
-    print("Oggetto 'player_template' (il contenitore) non trovato, impossibile duplicare.")
-
+    print("Object 'player_template' (the container) not found, unable to duplicate.")
 
 
-# --- 5. Imposta la Telecamera ---
-
+# Set Up Camera
 bpy.ops.object.camera_add(
-
-    location=(47, 25, 120), # Centrata sul campo (94/2, 50/2) e 120 in alto
-
-    rotation=(0, 0, 0) # Guarda dritto in basso
-
+    location=(47, 25, 120),
+    rotation=(0, 0, 0)
 )
-
 camera = bpy.context.active_object
-
 camera.name = "TopDownCamera"
-
 bpy.context.scene.camera = camera
+print("Camera set.")
 
-print("Telecamera impostata.")
-
-
-
-print("--- Fase 2 (Importazione Scena) COMPLETATA ---")
+print("Scene Import Completed")

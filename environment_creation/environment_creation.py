@@ -1,56 +1,55 @@
 import bpy
 import os
 
-# ===== CONFIGURAZIONE PERCORSI =====
+# ===== PATH CONFIGURATION =====
 BASE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project"
 
-COURT_FILE = "basketball_court.glb"
-BALL_BLEND_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project\basketballball_v3.1_Cycles.blend"
+COURT_FILE = "objects/basketball_court.glb"
+BALL_BLEND_PATH = "objects/ball.blend"
 BALL_OBJECT_NAME_IN_BLEND = "bbc_ball_body"
 
-# ===== VALORI DI SCALA E POSIZIONE =====
+# ===== SCALE AND LOCATION VALUES ====
 COURT_SCALE = (3.355, 3.355, 3.355)
 BALL_SCALE = (3.3, 3.3, 3.3)
 
-# Character: da 1.65m a 6.5 piedi
-# 6.5 feet / 1.65 meters = 3.939
+# Character: from 1.65m to 6.5 feet
 PLAYER_SCALE = (3.75, 3.75, 3.75)
 
-# Posizione del campo (centrato per dati CSV 0-94 piedi)
+# Court position and rotation
 COURT_LOCATION = (25, 47, 0)
 COURT_ROTATION = (0, 0, 0)
 
 
-print("=== INIZIO IMPORTAZIONE CAMPO E PALLA ===")
+print("=== START IMPORTING COURT AND BALL ===")
 
-# --- 1. Importa il Campo da Basket (.glb) ---
+# Import Basketball Court
 try:
     court_path = os.path.join(BASE_PATH, COURT_FILE)
     bpy.ops.import_scene.gltf(filepath=court_path)
     court_obj = bpy.context.active_object
     court_obj.name = "Court"
-    print(f"✓ Campo '{COURT_FILE}' importato come 'Court'")
+    print(f"Court '{COURT_FILE}' imported as 'Court'")
 except Exception as e:
-    print(f"✗ ERRORE importazione campo: {e}")
+    print(f"ERROR importing court: {e}")
 
 
-# --- 2. "Appendi" la Palla dal file .blend ---
+# Append the ball from blend file
 try:
     obj_name = BALL_OBJECT_NAME_IN_BLEND
-    
-    with bpy.data.libraries.load(BALL_BLEND_PATH, link=False) as (data_from, data_to):
+    BALL_PATH = os.path.join(BASE_PATH, BALL_BLEND_PATH)
+
+    with bpy.data.libraries.load(BALL_PATH, link=False) as (data_from, data_to):
         if obj_name in data_from.objects:
             data_to.objects = [obj_name]
         else:
-            print(f"✗ ERRORE: Oggetto '{obj_name}' NON TROVATO in {BALL_BLEND_PATH}")
+            print(f"ERROR: Object '{obj_name}' NOT FOUND in {BALL_BLEND_PATH}")
     
-    # Istanzia l'oggetto palla nella scena
+    # Instantiate the ball object in the scene
     if obj_name in bpy.data.objects:
         ball_obj = bpy.data.objects[obj_name]
     elif f"{obj_name}.001" in bpy.data.objects:
         ball_obj = bpy.data.objects[f"{obj_name}.001"]
     else:
-        # Cerca tra tutti gli oggetti
         found = False
         for obj in bpy.context.scene.objects:
             if obj.name.startswith(obj_name):
@@ -58,32 +57,31 @@ try:
                 found = True
                 break
         if not found:
-            raise Exception(f"Impossibile trovare l'oggetto palla {obj_name} dopo l'append.")
+            raise Exception(f"Unable to find ball object {obj_name} after append.")
     
     ball_obj.name = "ball"
-    
-    # Assicura che sia nella collezione principale
+
     if ball_obj.name not in bpy.context.collection.objects:
         bpy.context.collection.objects.link(ball_obj)
     
-    print(f"✓ Palla '{obj_name}' importata come 'ball'")
+    print(f"Ball '{obj_name}' imported as 'ball'")
         
 except Exception as e:
-    print(f"✗ ERRORE append palla: {e}")
+    print(f"ERROR appending ball: {e}")
 
 
-# --- 3. Standardizzazione Campo ---
-print("\n=== STANDARDIZZAZIONE ASSET ===")
+# Court Standardization
+print("\n=== ASSET STANDARDIZATION ===")
 
 if "Court" in bpy.data.objects:
     court_obj = bpy.data.objects["Court"]
     court_obj.location = COURT_LOCATION
     court_obj.rotation_euler = COURT_ROTATION
     court_obj.scale = COURT_SCALE
-    print("✓ Campo standardizzato.")
+    print("Court standardized.")
     
-    # Scala Z aggiuntiva per tabelloni e canestri
-    print("  → Applicazione scala Z a tabelloni e canestri...")
+    # Additional Z scale for backboards and rims
+    print("  -> Applying Z scale to backboards and rims...")
     prefixes_to_scale = [
         "Basketball_Backboard",
         "Basketball_Rim"
@@ -95,32 +93,32 @@ if "Court" in bpy.data.objects:
                 obj.scale.z = obj.scale.z * 1.023
                 break
     
-    print("  ✓ Scala Z di tabelloni e canestri modificata.")
+    print("  Backboard and rim Z scale modified.")
 else:
-    print("✗ Oggetto 'Court' non trovato.")
+    print("Object 'Court' not found.")
 
 
-# --- 4. Standardizzazione Palla ---
+# Ball Standardization
 if "ball" in bpy.data.objects:
     ball_obj = bpy.data.objects["ball"]
-    ball_obj.location = (25, 25, 1.5)  # Posizione iniziale (centro campo, leggermente sollevata)
+    ball_obj.location = (25, 25, 1.5)
     ball_obj.rotation_euler = (0, 0, 0)
     ball_obj.scale = BALL_SCALE
-    print("✓ Palla standardizzata.")
+    print("Ball standardized.")
 else:
-    print("✗ Oggetto 'ball' non trovato.")
+    print("Object 'ball' not found.")
 
 
-# --- 5. Standardizzazione Character ---
+# Character Standardization
 if "Armature" in bpy.data.objects:
     armature_obj = bpy.data.objects["Armature"]
     armature_obj.scale = PLAYER_SCALE
-    print(f"✓ Character 'Armature' scalato a {PLAYER_SCALE[0]:.3f} (da 1.65m a ~6.5 piedi)")
+    print(f"Character 'Armature' scaled to {PLAYER_SCALE[0]:.3f} (from 1.65m to ~6.5 feet)")
 else:
-    print("✗ Oggetto 'Armature' non trovato.")
+    print("Object 'Armature' not found.")
 
 
-# --- 6. Imposta Telecamera Top-Down ---
+# Set Up Top-Down Camera
 bpy.ops.object.camera_add(
     location=(47, 25, 120),
     rotation=(0, 0, 0)
@@ -128,15 +126,15 @@ bpy.ops.object.camera_add(
 camera = bpy.context.active_object
 camera.name = "TopDownCamera"
 bpy.context.scene.camera = camera
-print("✓ Telecamera top-down impostata.")
+print("Top-down camera set.")
 
 
-print("\n=== IMPORTAZIONE COMPLETATA ===")
-print(f"✓ Character 'Armature' scalato correttamente (~6.5 piedi)")
-print(f"✓ Campo posizionato in: {COURT_LOCATION}")
-print(f"✓ Palla posizionata in: (25, 25, 1.5)")
-print(f"\n📏 Sistema di unità: 1 unità Blender = 1 piede")
-print("   Campo: 94 x 50 piedi")
-print("   Canestro: 10 piedi")
-print("   Giocatore: ~6.5 piedi")
-print("\nPronto per l'animazione! 🏀")
+print("\n=== IMPORT COMPLETED ===")
+print(f"Character 'Armature' scaled correctly (~6.5 feet)")
+print(f"Court positioned at: {COURT_LOCATION}")
+print(f"Ball positioned at: (25, 25, 1.5)")
+print(f"\nUnit system: 1 Blender unit = 1 foot")
+print("   Court: 94 x 50 feet")
+print("   Rim: 10 feet")
+print("   Player: ~6.5 feet")
+print("\nReady for animation!")

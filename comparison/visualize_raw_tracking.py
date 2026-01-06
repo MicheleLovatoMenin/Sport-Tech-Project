@@ -3,8 +3,10 @@ import os
 import json
 import math
 
-# --- USER CONFIGURATION ---
-JSON_FILE_PATH = r"C:\Users\DISI\Documents\SportTech Students\Basket_Virtualisation\Sport-Tech-Project\nba_tracking_data_tiny.json"
+# USER CONFIGURATION
+JSON_FILE_PATH = r"C:\Users\DISI\Documents\SportTech Students\Basket_Virtualisation\Sport-Tech-Project"
+DATASET = "nba_tracking_data_tiny.json"
+JSON_FILE_PATH = os.path.join(JSON_FILE_PATH, DATASET)
 
 TARGET_GAME_ID = "0021500333"
 TARGET_EVENT_ID = "202"  
@@ -32,7 +34,7 @@ def cleanup_previous_animation():
 try:
     cleanup_previous_animation()
 
-    # --- 1. Load JSON Data ---
+    # Load JSON Data
     print(f"Loading data from {JSON_FILE_PATH}...")
     print(f"Searching for GAME_ID: {TARGET_GAME_ID} and EVENT_ID: {TARGET_EVENT_ID}")
 
@@ -61,7 +63,6 @@ try:
 
     if event is None:
         raise Exception(f"ERROR: Event '{target_event_str}' for game '{target_game_str}' was not found.")
-
 
     # Scene Settings
     bpy.context.scene.render.fps = 25
@@ -121,11 +122,11 @@ try:
 
         # Animate the Ball
         ball_coords_nba = moment['ball_coordinates']
-        ball_pos_2d = (ball_coords_nba['x'], ball_coords_nba['y']) # 2D ball position
+        ball_pos_2d = (ball_coords_nba['x'], ball_coords_nba['y'])
         ball_obj.location = convert_coords(ball_coords_nba['x'], ball_coords_nba['y'], ball_coords_nba['z'])
         ball_obj.keyframe_insert(data_path="location", frame=frame_num)
 
-        # Animate Players (LOOK AT BALL ONLY) ---
+        # Animate Players
         for p_data in moment['player_coordinates']:
             player_id_str = str(p_data['playerid']) 
             obj_name = player_id_to_object_name_map.get(player_id_str)
@@ -133,35 +134,30 @@ try:
             if obj_name:
                 player_obj = bpy.data.objects[obj_name]
 
-                # Read NBA coordinates
                 nba_x = p_data['x']
                 nba_y = p_data['y']
                 nba_z = p_data['z']
 
-                # DEBUG PRINT (only for the first frame)
                 if i == 0 and not debug_printed:
                     print(f"-> DEBUG (Frame 0): {obj_name} (ID: {player_id_str}) -> DATA READ: (x={nba_x:.1f}, y={nba_y:.1f}, z={nba_z:.1f})")
 
-                # Apply POSITION coordinates
                 player_obj.location = convert_coords(nba_x, nba_y, nba_z)
                 player_obj.keyframe_insert(data_path="location", frame=frame_num)
 
-                # START ROTATION LOGIC (look at ball only)
-                
+                # rotation logic to look at the ball
                 current_pos_2d = (nba_x, nba_y)
                 
                 # Calculate vector from player to ball
                 delta_to_ball_x = ball_pos_2d[0] - current_pos_2d[0]
                 delta_to_ball_y = ball_pos_2d[1] - current_pos_2d[1]
                 
-                # Calculate angle to look at the ball (Converted for Blender)
+                # Calculate angle to look at the ball
                 angle_z = math.atan2(delta_to_ball_x, delta_to_ball_y) + (math.pi / 2)
                 
                 # Apply rotation
                 player_obj.rotation_euler.z = angle_z
-                player_obj.keyframe_insert(data_path="rotation_euler", frame=frame_num)
-                
-                # --- END ROTATION LOGIC ---
+                player_obj.keyframe_insert(data_path="rotation_euler", frame=frame_num)                
+                # end rotation logic
 
         if i == 0:
             debug_printed = True

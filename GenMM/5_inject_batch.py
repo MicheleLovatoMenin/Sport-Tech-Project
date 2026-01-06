@@ -3,20 +3,20 @@ import json
 import os
 import mathutils
 
-# ==================== CONFIGURAZIONE ====================
+# ==================== CONFIGURATION ====================
 BASE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project"
-WORK_DIR = os.path.join(BASE_PATH, "baby_step_optimized")
+WORK_DIR = os.path.join(BASE_PATH, "GenMM")
 
 LIBRARY_FOLDER = os.path.join(WORK_DIR, "gap_libraries")
 GAP_JSON_PATH = os.path.join(WORK_DIR, "gap_export.json")
 
 ARMATURE_NAME = "Armature"
 
-# ==================== UTILS DATI ====================
+# ==================== DATA UTILS ====================
 
 def load_all_gaps():
     if not os.path.exists(GAP_JSON_PATH):
-        raise Exception(f"JSON mancante: {GAP_JSON_PATH}")
+        raise Exception(f"Missing JSON: {GAP_JSON_PATH}")
     with open(GAP_JSON_PATH, 'r') as f:
         return json.load(f)
 
@@ -26,7 +26,7 @@ def load_gap_action(gap_idx):
     blend_path = os.path.join(LIBRARY_FOLDER, filename)
     
     if not os.path.exists(blend_path):
-        print(f"   ⚠️ File libreria mancante: {filename} (Skip)")
+        print(f"   Library file missing: {filename} (Skip)")
         return None
     
     expected_action_name = f"Action_{gap_id}"
@@ -39,7 +39,7 @@ def load_gap_action(gap_idx):
                 data_to.actions = [data_from.actions[0]]
     
     if not data_to.actions:
-        print(f"   ❌ Nessuna azione nel file {filename}")
+        print(f"   No action in file {filename}")
         return None
     
     loaded_action = data_to.actions[0]
@@ -49,11 +49,11 @@ def load_gap_action(gap_idx):
     
     return action_copy
 
-# ==================== NLA & CORREZIONI ====================
+# ==================== NLA & CORRECTIONS ====================
 
 def ensure_trajectory_in_nla(armature):
-    """Sposta il movimento originale (tracking) nell'NLA"""
-    print("📦 SETUP NLA BASE...")
+    """Moves the original movement (tracking) into the NLA"""
+    print("BASE NLA SETUP...")
     if not armature.animation_data: armature.animation_data_create()
     
     active_action = armature.animation_data.action
@@ -75,16 +75,16 @@ def ensure_trajectory_in_nla(armature):
                 action=active_action
             )
             strip.blend_type = 'COMBINE' 
-            print("   ✅ Azione base spostata in NLA Strip.")
+            print("   Base action moved to NLA Strip.")
         
         armature.animation_data.action = None
 
 def create_correction_layer(armature):
-    """Crea UNA VOLTA SOLA il layer che corregge l'offset della Rest Pose."""
-    print("🔧 SETUP CORREZIONE OFFSET...")
+    """Creates the layer that corrects the Rest Pose offset ONCE."""
+    print("OFFSET CORRECTION SETUP...")
     pbone = armature.pose.bones.get("mixamorig:Hips") or armature.pose.bones.get("Hips")
     if not pbone: 
-        print("   ❌ Bone Hips non trovato.")
+        print("   Hips Bone not found.")
         return mathutils.Vector((0,0,0))
 
     rest_local = pbone.bone.matrix_local.translation
@@ -113,35 +113,32 @@ def create_correction_layer(armature):
         strip.extrapolation = 'HOLD'
         strip.frame_end = 50000 
         
-        print(f"   ✅ Layer Correzione Creato: {correction_vec}")
+        print(f"   Correction Layer Created: {correction_vec}")
     else:
-        print(f"   ℹ️ Layer Correzione esistente. Vector: {correction_vec}")
+        print(f"   Correction Layer existing. Vector: {correction_vec}")
         
     return correction_vec
 
-# ==================== CALCOLO & INIEZIONE (WARPING) ====================
+# ==================== CALCULATION & INJECTION (WARPING) ====================
 
 def align_and_blend_height(armature, action, gap_start, gap_end, correction_vec):
     pbone = armature.pose.bones.get("mixamorig:Hips") or armature.pose.bones.get("Hips")
     if not pbone: return action
     
-    # --- 1. ANCORA INIZIALE (PASSATO) ---
-    # Leggiamo dove si trova il bacino al frame PRIMA del gap
+    # --- 1. INITIAL ANCHOR (PAST) ---
+    # Read where the hips are at the frame BEFORE the gap
     bpy.context.scene.frame_set(gap_start - 1)
     bpy.context.view_layer.update()
     anchor_start_loc = pbone.location.copy()
     
-    # --- 2. ANCORA FINALE (FUTURO) ---
-    # Leggiamo dove si trova il bacino al frame DOPO il gap
-    # Nota: Poiché stiamo lavorando in NLA, frame_set leggerà la traccia sottostante (Trajectory)
-    # che contiene il movimento originale (es. T-Pose o posa successiva)
-    bpy.context.scene.frame_set(gap_end + 1) # +1 per sicurezza, o gap_end
+    # --- 2. FINAL ANCHOR (FUTURE) ---
+    # Read where the hips are at the frame AFTER the gap
+    bpy.context.scene.frame_set(gap_end + 1)
     bpy.context.view_layer.update()
     anchor_end_loc = pbone.location.copy()
 
-    # --- 3. DATI AZIONE AI ---
-    # Valutiamo l'altezza interna dell'azione AI all'inizio e alla fine
-    # (Attenzione: action frame 0 è l'inizio, action frame max è la fine)
+    # --- 3. AI ACTION DATA ---
+    # Evaluate the internal height of the AI action at start and end
     ai_duration = action.frame_range[1] - action.frame_range[0]
     
     ai_start_vals = [0.0, 0.0, 0.0]
@@ -152,44 +149,41 @@ def align_and_blend_height(armature, action, gap_start, gap_end, correction_vec)
             ai_start_vals[fc.array_index] = fc.evaluate(0)
             ai_end_vals[fc.array_index] = fc.evaluate(ai_duration)
 
-    # --- 4. CALCOLO OFFSET NECESSARI ---
-    # X e Z: Usiamo solo l'ancora iniziale (Logica classica "In-Place")
-    # Y: Usiamo il BLENDING tra Start ed End
-    
+    # --- 4. CALCULATING NECESSARY OFFSETS ---
+    # X and Z: Use only the initial anchor (Classic "In-Place" logic)
     delta_x_start = (anchor_start_loc.x - ai_start_vals[0]) - correction_vec.x
     delta_z_start = (anchor_start_loc.z - ai_start_vals[2]) - correction_vec.z
     
-    # Offset Y INIZIALE (Quanto devo correggere per matchare il passato?)
+    # initial Y Offset
     offset_y_start = anchor_start_loc.y - ai_start_vals[1]
     
-    # Offset Y FINALE (Quanto devo correggere per matchare il futuro?)
+    # final Y Offset
     offset_y_end = anchor_end_loc.y - ai_end_vals[1]
     
     # DEBUG
-    print(f"      🔗 Blending Y: Start Offset={offset_y_start:.3f} -> End Offset={offset_y_end:.3f}")
+    print(f"      Blending Y: Start Offset={offset_y_start:.3f} -> End Offset={offset_y_end:.3f}")
 
-    # --- 5. APPLICAZIONE (WARPING) ---
+    # --- 5. APPLICATION (WARPING) ---
     for fc in action.fcurves:
         if "location" in fc.data_path and ("Hips" in fc.data_path or "root" in fc.data_path):
             idx = fc.array_index
             
-            if idx == 0: # X - Costante su Start
+            if idx == 0:
                 for kp in fc.keyframe_points: kp.co.y += delta_x_start
             
-            elif idx == 2: # Z - Costante su Start
+            elif idx == 2:
                 for kp in fc.keyframe_points: kp.co.y += delta_z_start
             
-            elif idx == 1: # Y - WARPING LINEARE
+            elif idx == 1:
                 for kp in fc.keyframe_points:
-                    # Calcolo fattore di blend (t) da 0.0 a 1.0 basato sul tempo
                     current_frame = kp.co.x
                     t = current_frame / ai_duration if ai_duration > 0 else 0
-                    t = max(0.0, min(1.0, t)) # Clamp tra 0 e 1
+                    t = max(0.0, min(1.0, t)) # Clamp between 0 and 1
                     
-                    # Interpolazione Lineare (Lerp) tra offset iniziale e finale
+                    # Linear Interpolation (Lerp) between start and end offset
                     current_offset = ((1 - t) * offset_y_start) + (t * offset_y_end)
                     
-                    # Applico l'offset variabile
+                    # Apply variable offset
                     kp.co.y += current_offset
                 
     return action
@@ -202,7 +196,6 @@ def inject_single_gap(armature, main_track, gap_data, correction_vec):
     gap_start = int(gap_data['frame_start_timeline'])
     gap_end = int(gap_data['frame_end_timeline'])
     
-    # USIAMO LA NUOVA FUNZIONE DI BLENDING
     fixed_action = align_and_blend_height(armature, action, gap_start, gap_end, correction_vec)
     
     try:
@@ -219,23 +212,23 @@ def inject_single_gap(armature, main_track, gap_data, correction_vec):
         strip.action_frame_end = fixed_action.frame_range[1]
         strip.frame_end = gap_end
         
-        print(f"   ✅ Inserito Gap #{idx} [{gap_start}-{gap_end}]")
+        print(f"   Inserted Gap #{idx} [{gap_start}-{gap_end}]")
         return True
         
     except Exception as e:
-        print(f"   ❌ Errore inserimento strip Gap #{idx}: {e}")
+        print(f"   Insertion error Gap #{idx}: {e}")
         return False
 
 # ==================== MAIN ====================
 
 def main():
     print("="*60)
-    print("🚀 ASSEMBLER BATCH V5 (Y-MOTION WARPING)")
+    print("BATCH ASSEMBLER (Y-MOTION WARPING)")
     print("="*60)
     
     try:
         armature = bpy.data.objects.get(ARMATURE_NAME)
-        if not armature: raise Exception("Armatura non trovata.")
+        if not armature: raise Exception("Armature not found.")
         if bpy.context.object: bpy.ops.object.mode_set(mode='OBJECT')
         
         ensure_trajectory_in_nla(armature)
@@ -265,11 +258,11 @@ def main():
             bpy.context.view_layer.update()
             
         print("-" * 60)
-        print(f"🎉 COMPLETATO. Gaps Iniettati: {success_count} / {len(gaps)}")
+        print(f"COMPLETED. Gaps Injected: {success_count} / {len(gaps)}")
         armature.animation_data.action = None
         
     except Exception as e:
-        print(f"❌ FAIL: {e}")
+        print(f"FAIL: {e}")
         import traceback
         traceback.print_exc()
 

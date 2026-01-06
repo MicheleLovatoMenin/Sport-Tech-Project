@@ -6,12 +6,12 @@ import sys
 import os
 import json
 
-# ==================== CONFIGURAZIONE ====================
+# ==================== CONFIGURATION ====================
 BASE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project"
-WORK_DIR = os.path.join(BASE_PATH, "baby_step_optimized")
-METADATA_JSON_PATH = os.path.join(WORK_DIR, "lab_metadata.json") # <--- Fonte della verità
+WORK_DIR = os.path.join(BASE_PATH, "GenMM")
+METADATA_JSON_PATH = os.path.join(WORK_DIR, "lab_metadata.json")
 
-# Opzioni
+
 DELETE_GENMM_SKELETON = True
 
 # ==================== IMPORT GENMM ====================
@@ -24,7 +24,7 @@ except ImportError:
     try: from __init__ import get_bvh_data, load
     except: pass
 
-# ==================== HOTFIX GENMM ====================
+# ==================== GENMM HOTFIX ====================
 try:
     def constrained_match_and_blend(synthesized, targets, criteria, n_steps, pbar, ext=None):
         losses = []
@@ -40,34 +40,34 @@ try:
         return synthesized, losses
 
     GenMM.match_and_blend = staticmethod(constrained_match_and_blend)
-    print("✅ HOTFIX GenMM applicato.")
+    print("GenMM HOTFIX applied.")
 except Exception as e:
-    print(f"❌ ERRORE HOTFIX: {e}")
+    print(f"HOTFIX ERROR: {e}")
 
-# ==================== LETTURA METADATI ====================
+# ==================== METADATA READING ====================
 
 def get_frames_from_metadata():
     """
-    Legge il file lab_metadata.json e restituisce i frame corretti
-    per il file .blend attualmente aperto.
+    Reads the lab_metadata.json file and returns the correct frames
+    for the currently open .blend file.
     """
     filepath = bpy.context.blend_data.filepath
     if not filepath:
-        raise Exception("Il file deve essere salvato su disco per essere riconosciuto.")
+        raise Exception("The file must be saved to disk to be recognized.")
     
     filename = os.path.basename(filepath)
     
     if not os.path.exists(METADATA_JSON_PATH):
-        raise Exception(f"Metadata file non trovato: {METADATA_JSON_PATH}. Esegui prima lo Script 2!")
+        raise Exception(f"Metadata file not found: {METADATA_JSON_PATH}. Run Script 2 first!")
         
     with open(METADATA_JSON_PATH, 'r') as f:
         db = json.load(f)
         
     if filename not in db:
-        raise Exception(f"Il file '{filename}' non è presente nel database dei metadati.")
+        raise Exception(f"File '{filename}' is not present in the metadata database.")
         
     info = db[filename]
-    print(f"📂 FILE RICONOSCIUTO: {filename}")
+    print(f"FILE RECOGNIZED: {filename}")
     print(f"   Gap: {info['gap_start']} -> {info['gap_end']}")
     print(f"   Total: {info['total_start']} -> {info['total_end']}")
     
@@ -82,7 +82,7 @@ def get_hips_bone_name(armature_obj):
             return b.name
     return "mixamorig:Hips"
 
-def genera_mapping_dinamico(obj_source, obj_target):
+def generate_dynamic_mapping(obj_source, obj_target):
     mapping = {}
     for bone_tgt in obj_target.pose.bones:
         tgt_name = bone_tgt.name
@@ -130,12 +130,12 @@ def get_3d_view_override(context):
                         return {'window': window, 'screen': screen, 'area': area, 'region': region, 'workspace': window.workspace, 'scene': context.scene, 'view_layer': context.view_layer, 'layer_collection': context.view_layer.layer_collection}
     return None
 
-def esegui_retargeting_rokoko_avanzato(obj_source, obj_target):
-    print(f"🔄 Avvio Retargeting: {obj_source.name} -> {obj_target.name}")
+def execute_advanced_rokoko_retargeting(obj_source, obj_target):
+    print(f"Starting Retargeting: {obj_source.name} -> {obj_target.name}")
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.update()
-    temp_map = genera_mapping_dinamico(obj_source, obj_target)
+    temp_map = generate_dynamic_mapping(obj_source, obj_target)
     scn = bpy.context.scene
     scn.rsl_retargeting_armature_source = obj_source
     scn.rsl_retargeting_armature_target = obj_target
@@ -152,33 +152,33 @@ def esegui_retargeting_rokoko_avanzato(obj_source, obj_target):
         bpy.ops.rsl.retarget_animation()
         return True
     except Exception as e:
-        print(f"❌ Errore Rokoko: {e}")
+        print(f"Rokoko Error: {e}")
         return False
 
 # ==================== MAIN ====================
 
 def run_processor():
-    obj_originale = bpy.context.active_object
-    if not obj_originale or obj_originale.type != 'ARMATURE':
-        obj_originale = bpy.data.objects.get("Armature")
-        if not obj_originale:
-            print("❌ Nessuna armatura trovata.")
+    obj_original = bpy.context.active_object
+    if not obj_original or obj_original.type != 'ARMATURE':
+        obj_original = bpy.data.objects.get("Armature")
+        if not obj_original:
+            print("No armature found.")
             return
 
-    # --- 1. LETTURA FRAMES DA JSON ---
+    # read frames from json
     try:
         GAP_START, GAP_END, TOTAL_START, TOTAL_END = get_frames_from_metadata()
     except Exception as e:
-        print(f"❌ Errore Metadati: {e}")
+        print(f"Metadata Error: {e}")
         return
 
-    nome_originale = obj_originale.name
-    target_hip_name = get_hips_bone_name(obj_originale)
+    original_name = obj_original.name
+    target_hip_name = get_hips_bone_name(obj_original)
     ctx_override_dict = get_3d_view_override(bpy.context)
     if not ctx_override_dict: return
 
-    # --- 2. PREPARAZIONE DATI ---
-    print(f"📖 Lettura BVH ({TOTAL_START}-{TOTAL_END})...")
+    # data preparation
+    print(f"Reading BVH ({TOTAL_START}-{TOTAL_END})...")
     bvh_str = get_bvh_data(bpy.context, frame_start=TOTAL_START, frame_end=TOTAL_END)
     lines = bvh_str.split('\n')
     try: motion_idx = lines.index('MOTION') + 3
@@ -192,11 +192,11 @@ def run_processor():
 
     total_frames_data = motion_np_full.shape[0]
     
-    # Indici relativi array numpy
+    # Relative numpy array indices
     idx_gap_start = max(0, GAP_START - TOTAL_START)
     idx_gap_end = min(total_frames_data, GAP_END - TOTAL_START)
     
-    print(f"📊 GenMM Gap Index: {idx_gap_start} -> {idx_gap_end} (su {total_frames_data} frames)")
+    print(f"GenMM Gap Index: {idx_gap_start} -> {idx_gap_end} (out of {total_frames_data} frames)")
 
     # GenMM Setup
     UP_AXIS = 'Y_UP'
@@ -211,19 +211,18 @@ def run_processor():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = GenMM(device=device, silent=False)
     
-    # --- FIX CRITICO KERNEL SIZE ---
-    # Usiamo patch_size=5 invece di 11 per accomodare clip corte nei livelli bassi della piramide
+    # carnel size
     criteria = PatchCoherentLoss(patch_size=5, alpha=0.05, loop=False, cache=True)
     
     gt_tensor = dataset_full.motion_data.data.to(device)
     mask_tensor = torch.zeros_like(gt_tensor)
     
-    # Maschera
+    # Mask
     mask_tensor[..., idx_gap_start:idx_gap_end] = 1.0
     ext_constraints = {'fix_mask': mask_tensor, 'fix_value': gt_tensor}
     
-    # --- 3. RUN GENERATION ---
-    print("🚀 Running GenMM...")
+    # run generation
+    print("Running GenMM...")
     try:
         syn_tensor = model.run(
             target=targets_list, 
@@ -231,15 +230,15 @@ def run_processor():
             num_frames=str(total_frames_data), 
             num_steps=10, 
             noise_sigma=0.5, 
-            patch_size=5, # Anche qui 5 per coerenza
+            patch_size=5,
             coarse_ratio="0.2x_nframes", 
             pyr_factor=0.75, 
             ext=ext_constraints
         )
-    except Exception as e: print(f"❌ Run GenMM Failed: {e}"); return
+    except Exception as e: print(f"Run GenMM Failed: {e}"); return
 
-    # --- 4. IMPORT & RETARGET ---
-    print("\n💾 Import Result...")
+    # import and retarget
+    print("\nImport Result...")
     syn_parsed = dataset_full.parse(syn_tensor)
     header_str = "\n".join(lines[:motion_idx]) + "\n"
     data_str = ""
@@ -251,42 +250,42 @@ def run_processor():
         if bpy.ops.object.mode_set.poll(): bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         
-        load(bpy.context, bvh_lines, target='ARMATURE', global_matrix=obj_originale.matrix_world, report=print) 
+        load(bpy.context, bvh_lines, target='ARMATURE', global_matrix=obj_original.matrix_world, report=print) 
         
-        obj_generato = bpy.context.active_object
-        if not obj_generato:
+        obj_generated = bpy.context.active_object
+        if not obj_generated:
             for obj in bpy.context.selected_objects:
-                if obj.type == 'ARMATURE' and obj != obj_originale:
-                    obj_generato = obj; break
-        if not obj_generato: return
-        obj_generato.name = "Result_InBetween_NEW"
+                if obj.type == 'ARMATURE' and obj != obj_original:
+                    obj_generated = obj; break
+        if not obj_generated: return
+        obj_generated.name = "Result_InBetween_NEW"
         
         # Rokoko
-        obj_originale_scene = bpy.data.objects.get(nome_originale)
-        if obj_originale_scene:
-            bpy.context.view_layer.objects.active = obj_originale_scene
-            obj_originale_scene.select_set(True)
-            obj_generato.select_set(False) 
+        obj_original_scene = bpy.data.objects.get(original_name)
+        if obj_original_scene:
+            bpy.context.view_layer.objects.active = obj_original_scene
+            obj_original_scene.select_set(True)
+            obj_generated.select_set(False) 
             
-            success = esegui_retargeting_rokoko_avanzato(obj_source=obj_generato, obj_target=obj_originale_scene)
+            success = execute_advanced_rokoko_retargeting(obj_source=obj_generated, obj_target=obj_original_scene)
             
             if success:
-                print("🧵 Overwriting Hips Location...")
-                source_hip_name = get_hips_bone_name(obj_generato)
-                overwrite_hips_location_with_source(obj_target=obj_originale_scene, bone_target_name=target_hip_name, obj_source=obj_generato, bone_source_name=source_hip_name, start_f=TOTAL_START, end_f=TOTAL_END)
-                print("✅ Done.")
+                print("Overwriting Hips Location...")
+                source_hip_name = get_hips_bone_name(obj_generated)
+                overwrite_hips_location_with_source(obj_target=obj_original_scene, bone_target_name=target_hip_name, obj_source=obj_generated, bone_source_name=source_hip_name, start_f=TOTAL_START, end_f=TOTAL_END)
+                print("Done.")
                 
                 if DELETE_GENMM_SKELETON:
-                    bpy.data.objects.remove(obj_generato, do_unlink=True)
+                    bpy.data.objects.remove(obj_generated, do_unlink=True)
             else:
-                print("⚠️ Retargeting failed.")
+                print("Retargeting failed.")
 
     # --- 5. SAVE ---
     filepath = bpy.data.filepath
     if filepath:
         new_filepath = filepath.replace(".blend", "_filled.blend")
         bpy.ops.wm.save_as_mainfile(filepath=new_filepath, copy=True, compress=True)
-        print(f"🎉 SAVED: {os.path.basename(new_filepath)}")
+        print(f"SAVED: {os.path.basename(new_filepath)}")
 
 if __name__ == "__main__":
     run_processor()

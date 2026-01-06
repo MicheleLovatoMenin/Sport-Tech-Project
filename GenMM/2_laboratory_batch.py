@@ -2,23 +2,23 @@ import bpy
 import json
 import os
 
-# ==================== CONFIGURAZIONE ====================
+# ==================== CONFIGURATION ====================
 BASE_PATH = r"C:\Users\Sport Tech Student\PYTHON_DIRECTORY\Sport-Tech-Project"
-WORK_DIR = os.path.join(BASE_PATH, "baby_step_optimized")
+WORK_DIR = os.path.join(BASE_PATH, "GenMM")
 
 # Input
 GAP_JSON_PATH = os.path.join(WORK_DIR, "gap_export.json") 
 
 # Output
 TEMP_LABS_DIR = os.path.join(WORK_DIR, "temp_labs")
-METADATA_JSON_PATH = os.path.join(WORK_DIR, "lab_metadata.json") # <--- NUOVO FILE
+METADATA_JSON_PATH = os.path.join(WORK_DIR, "lab_metadata.json")
 
-# Parametri
+# Parameters
 OUTPUT_ACTION_NAME = "Gap_Scenario_To_Fill"
 GAP_FRAMES = 10 
 MIN_CONTEXT_FRAMES = 40 
 
-# ==================== LOGICA BATCH ====================
+# ==================== BATCH LOGIC ====================
 
 def setup_dirs():
     if not os.path.exists(TEMP_LABS_DIR):
@@ -26,7 +26,7 @@ def setup_dirs():
 
 def load_gaps():
     if not os.path.exists(GAP_JSON_PATH):
-        raise Exception(f"File JSON non trovato: {GAP_JSON_PATH}")
+        raise Exception(f"JSON file not found: {GAP_JSON_PATH}")
     with open(GAP_JSON_PATH, 'r') as f:
         return json.load(f)
 
@@ -41,19 +41,19 @@ def is_valid_gap(gap):
     idx = gap['index']
     start_timeline = gap['frame_start_timeline']
     if start_timeline < 0:
-        print(f"⚠️ SKIP Gap #{idx}: Inizia a frame negativo.")
+        print(f"SKIP Gap #{idx}: Starts at negative frame.")
         return False
     
     data_a = gap['clip_a']
     if data_a['cut_frame_end'] <= 0.01: 
-        print(f"⚠️ SKIP Gap #{idx}: Durata nulla.")
+        print(f"SKIP Gap #{idx}: Zero duration.")
         return False
 
     return True
 
 def process_single_gap(gap_data, obj):
     """
-    Ritorna un dizionario con i metadati del gap processato (start, end, file)
+    Returns a dictionary with metadata of the processed gap (start, end, file)
     """
     gap_idx = gap_data['index']
     clean_scene(obj)
@@ -68,9 +68,9 @@ def process_single_gap(gap_data, obj):
     start_frame_timeline = 1
     strip_a = track.strips.new(data_a['name'], start=start_frame_timeline, action=action_a)
     strip_a.scale = 1.0
-    strip_a.action_frame_end = data_a['cut_frame_end'] # Taglio esatto dal JSON
+    strip_a.action_frame_end = data_a['cut_frame_end']
     
-    # Durata sulla timeline (con scale 1.0)
+    # Duration on timeline (with scale 1.0)
     duration_a = strip_a.action_frame_end - strip_a.action_frame_start
     strip_a.frame_end = start_frame_timeline + duration_a
     strip_a.extrapolation = 'HOLD'
@@ -80,10 +80,10 @@ def process_single_gap(gap_data, obj):
     action_b = bpy.data.actions.get(data_b['action_name'])
     if not action_b: return None
 
-    # INIZIO GAP (Esattamente dove finisce A)
+    # gap start (exactly where A ends)
     gap_start_frame = int(strip_a.frame_end)
     
-    # FINE GAP (Dopo 10 frame)
+    # gap end (after 10 frames)
     gap_end_frame = gap_start_frame + GAP_FRAMES
     
     strip_b = track.strips.new(data_b['name'], start=gap_end_frame, action=action_b)
@@ -91,7 +91,7 @@ def process_single_gap(gap_data, obj):
     strip_b.action_frame_start = data_b['cut_frame_start']
     strip_b.action_frame_end = action_b.frame_range[1]
     
-    # === 3. BAKE & SETUP SCENA ===
+    # === 3. BAKE & SCENE SETUP ===
     bpy.context.scene.frame_start = int(start_frame_timeline)
     
     duration_b = strip_b.action_frame_end - strip_b.action_frame_start
@@ -120,7 +120,7 @@ def process_single_gap(gap_data, obj):
     bpy.ops.object.mode_set(mode='OBJECT')
     track.mute = True
     
-    # RITORNA I DATI PREZIOSI PER IL JSON
+    # return data for json
     return {
         "gap_start": gap_start_frame,
         "gap_end": gap_end_frame,
@@ -132,7 +132,7 @@ def save_lab_file(gap_idx):
     filename = f"lab_gap_{gap_idx:03d}.blend"
     filepath = os.path.join(TEMP_LABS_DIR, filename)
     bpy.ops.wm.save_as_mainfile(filepath=filepath, copy=True, compress=True)
-    print(f"💾 Generato: {filename}")
+    print(f"Generated: {filename}")
     return filename
 
 def cleanup_after_save(obj):
@@ -144,11 +144,11 @@ def cleanup_after_save(obj):
 
 def main():
     print("="*50)
-    print("🏭 LABORATORY BATCH V4 (METADATA GENERATOR)")
+    print("METADATA GENERATOR FOR LABORATORY FILES")
     print("="*50)
     setup_dirs()
     
-    metadata_db = {} # Dizionario per raccogliere tutti i dati
+    metadata_db = {}
 
     try:
         gaps = load_gaps()
@@ -165,28 +165,28 @@ def main():
             if not is_valid_gap(gap):
                 continue
             
-            # Processa e ottieni i dati temporali
+            # Process and get timing data
             timing_info = process_single_gap(gap, obj)
             
             if timing_info:
-                # Salva file fisico
+                # Save file
                 filename = save_lab_file(gap['index'])
                 
-                # Registra i metadati associati al nome del file
+                # Register metadata associated with filename
                 metadata_db[filename] = timing_info
                 
             cleanup_after_save(obj)
 
-        # SALVATAGGIO JSON METADATA
+        # SAVE METADATA JSON
         with open(METADATA_JSON_PATH, 'w') as f:
             json.dump(metadata_db, f, indent=4)
             
         print("-" * 50)
-        print(f"✅ METADATA SALVATI: {METADATA_JSON_PATH}")
-        print(f"📂 LABORATORI PRONTI: {len(metadata_db)}")
+        print(f"METADATA SAVED: {METADATA_JSON_PATH}")
+        print(f"LABS READY: {len(metadata_db)}")
 
     except Exception as e:
-        print(f"❌ ERRORE: {e}")
+        print(f"ERROR: {e}")
         import traceback
         traceback.print_exc()
 

@@ -151,7 +151,11 @@ Once the base animation is arranged in Blender, proceed with the manual export u
   * [x] Sampling Animations
   * [ ] Optimize Animations *(Unchecked)*
 
-4. Select the destination folder and click **Export glTF 2.0**.
+4. Enter the filename using the strict format `game_id-event_id.glb` (e.g., `0021500333-179.glb`) and select the destination folder.
+
+    **Important**: The filename must match the `game_id-event_id` pattern exactly. If named differently, the backend will not be able to link the 3D file to the database entry.
+
+   Finally, click **Export glTF 2.0**.
 
 * **Final Output:** The script exports the finished animation as a `.glb` file into the web assets folder, ready for the dashboard.
 
@@ -161,12 +165,14 @@ Once the base animation is arranged in Blender, proceed with the manual export u
 
 The repository includes three specialized directories that handle advanced synthesis, data validation, and environment setup:
 
-### 1. `GenMM/` (Advanced Motion Synthesis)
+### 1. GenMM/ (Advanced Motion Synthesis)
 This folder contains the tools and resources for the **Generative Motion Matching** pipeline, which replaces simple linear interpolation with neural motion synthesis.
 
-* **Workflow Adjustment:** To use this pipeline, replace the standard blending script with **`rule_based_genMM.py`**.
+* **Workflow Adjustment:** To use this pipeline, replace the standard blending script with **`GenMM\0_rule_based_genMM.py`**.
 * **The Logic:** Unlike the standard approach, `rule_based_genMM.py` constructs the timeline by placing animation blocks with intentional **10-frame gaps** between distinct movements (e.g., transition from dribble to shot).
-* **Motion In-Betweening:** These gaps are then processed by the GenMM algorithms `genMM.py` which generate physically valid "in-between" frames. This eliminates the robotic feel of standard blending and ensures smooth transitions. Despite that, it's preferable to use the "normal" blending, since 10 frames are not enough for good motion in-betweening, but at the same time, if we increare the number of frames, some animations are excluded, creating gaps with different intervals that make it difficult to perform standardised motion-in-between.
+* **Motion In-Betweening:** These gaps are then processed by the GenMM algorithms which generate physically valid "in-between" frames. This eliminates the robotic feel of standard blending and ensures smooth transitions. Despite that, it's preferable to use the "normal" blending, since 10 frames are not enough for good motion in-betweening, but at the same time, if we increare the number of frames, some animations are excluded, creating gaps with different intervals that make it difficult to perform standardised motion-in-between.
+
+    Note: A detailed technical guide on how to execute this 6-step pipeline is available within the GenMM/ directory README.
 
 ### 2. `Comparison/` (Raw Data Visualization)
 This directory contains tools to validate the raw SportVu data against our 3D reconstructions.

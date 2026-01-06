@@ -216,7 +216,7 @@ if __name__ == "__main__":
                     "event_id": TARGET_EVENT_ID,
                     "event_type": event_type,
                     "possession_team_id": detected_team_id,
-                    "primary_player_name": detected_shooter_name,                    "player_id": pid,
+                    "primary_player_name": detected_shooter_name,
                     "player_id": pid,
                     "shot_frame": frame,
                     "period": shot_moment.get('quarter'),

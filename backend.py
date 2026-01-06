@@ -6,37 +6,27 @@ app = Flask(__name__)
 CORS(app)
 
 def normalize_coordinates(json_x, json_y):
-    """
-    LOGICA CORRETTA:
-    json_x (0-94) è la lunghezza del campo.
-    json_y (0-50) è la larghezza del campo.
-    
-    Se json_x > 47, il tiro è nella metà campo 'lontana'.
-    Per portarlo nella metà campo 'vicina' (0-47):
-    - La nostra Y diventa: 94 - json_x
-    - La nostra X diventa: json_y (così 3 resta a sinistra e 47 va a destra)
-    """
+
     COURT_LENGTH = 94
     COURT_WIDTH = 50
     HALF_COURT = 47
 
-    # 1. Gestione Lunghezza (Asse Y nel grafico)
+    # 1. Length Handling (Y-Axis in the chart)
     if json_x > HALF_COURT:
-        # Se è oltre metà campo, ribaltiamo il lato
+        # If it's beyond half-court, flip the side
         norm_y = COURT_LENGTH - json_x
     else:
-        # Se è già nella metà campo vicina, lo teniamo così
+        # If it's already in the near half-court, keep it as is
         norm_y = json_x
         
-    # 2. Gestione Larghezza (Asse X nel grafico)
-    # Usiamo json_y direttamente. 
-    # Se json_y è piccolo (es. 3), il tiro sarà a sinistra.
-    # Se json_y è grande (es. 47), il tiro sarà a destra.
+    # 2. Width Handling (X-Axis in the chart)
+    # If json_y is small (e.g., 3), the shot will be on the left.
+    # If json_y is large (e.g., 47), the shot will be on the right.
     if json_x > HALF_COURT:
-        # Se è oltre metà campo, ribaltiamo verso il canestro vicino
+        # If it's beyond half-court, flip towards the near basket
         norm_x = json_y
     else:
-        # Se è già nella metà campo vicina, lo teniamo così
+        # If it's already in the near half-court, keep it as is
         norm_x = COURT_WIDTH - json_y
 
     
@@ -45,23 +35,22 @@ def normalize_coordinates(json_x, json_y):
 def process_shot_data(raw_data):
     processed_shots = []
     
-    # Set per raccogliere i valori univoci per i filtri del front-end
+    # Sets to collect unique values for front-end filters
     players = set()
     teams = set()
     matches = set()
 
     for shot in raw_data:
-        # 1. Normalizzazione Coordinate
+        # Coordinate Normalization
         norm_x, norm_y = normalize_coordinates(
             shot['shot_location_x'], 
             shot['shot_location_y']
         )
 
-        # 2. Creazione nome partita (Es: MIA @ IND - 2015-12-11)
+        # Match name creation (E.g: MIA @ IND - 2015-12-11)
         match_name = f"{shot['teams']['visitor']['abbreviation']} @ {shot['teams']['home']['abbreviation']} - {shot['game_date']}"
         
-        # 3. Identificazione Squadra che ha tirato
-        # Confrontiamo possession_team_id con i due team_id nel dizionario 'teams'
+        # Identification of the Shooting Team
         possession_id = int(shot['possession_team_id'])
         team_name = ""
         if possession_id == shot['teams']['home']['team_id']:
@@ -69,7 +58,7 @@ def process_shot_data(raw_data):
         else:
             team_name = shot['teams']['visitor']['name']
 
-        # Creazione del nuovo oggetto processato
+        # Creation of the new processed object
         clean_shot = {
             "matchId": shot['game_id'],
             "eventId": shot['event_id'],
@@ -78,19 +67,19 @@ def process_shot_data(raw_data):
             "match": match_name,
             "x": norm_x,
             "y": norm_y,
-            "made": shot['event_type'] == 1, # True se segnato (Cerchio), False se sbagliato (X)
+            "made": shot['event_type'] == 1,
             "period": shot['period'],
             "clock": shot['game_clock']
         }
 
         processed_shots.append(clean_shot)
         
-        # Popolamento set per i menù a tendina
+        # Populating sets for dropdown menus
         players.add(shot['primary_player_name'])
         teams.add(team_name)
         matches.add(match_name)
 
-    # Risultato finale strutturato
+    # Final structured result
     output = {
         "filters": {
             "players": sorted(list(players)),
@@ -102,17 +91,17 @@ def process_shot_data(raw_data):
     
     return output
 
-# --- IL PONTE (La rotta API) ---
+# API route
 @app.route('/api/shots')
 def get_shots():
-    # Carica il file JSON che hai nella cartella
+    # Load the JSON file located in the folder
     with open('shots_data.json', 'r') as f:
         data = json.load(f)
     
-    # Elabora i dati usando la tua funzione
+    # Process data using your function
     result = process_shot_data(data)
     
-    # Invia il risultato al browser
+    # Send the result to the browser
     return jsonify(result)
 
 if __name__ == '__main__':

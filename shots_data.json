@@ -543,33 +543,6 @@
 {
     "game_id": "0021500115",
     "game_date": "2015-11-11",
-    "event_id": "87",
-    "event_type": 2,
-    "possession_team_id": 1610612761,
-    "primary_player_name": "Kyle Lowry",
-    "player_id": 200768,
-    "shot_frame": 94,
-    "period": 1,
-    "game_clock": "03:43",
-    "shot_clock": 19.43,
-    "shot_location_x": 66.19334,
-    "shot_location_y": 13.7052,
-    "teams": {
-        "home": {
-            "name": "Philadelphia 76ers",
-            "team_id": 1610612755,
-            "abbreviation": "PHI"
-        },
-        "visitor": {
-            "name": "Toronto Raptors",
-            "team_id": 1610612761,
-            "abbreviation": "TOR"
-        }
-    }
-},
-{
-    "game_id": "0021500115",
-    "game_date": "2015-11-11",
     "event_id": "111",
     "event_type": 1,
     "possession_team_id": 1610612755,

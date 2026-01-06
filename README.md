@@ -75,6 +75,10 @@ The core virtualization takes place in **Blender** using the `rule_based_blend.p
 * **Directory:**
 For each file that is launched in Blender (`rule_based_blend.py`), you must manually modify the base directory (BASE_PATH).
 
+### Environment Setup
+
+Since the environment islarge, download and extract the zip file from [this link](https://drive.google.com/drive/folders/1UczKODgQ8h20t5PpQkrsuZZdyJOSg_bn?usp=sharing) and place the “basket_environment.blend” environment in the root of the project.
+
 ### Dataset Setup
 **Download Data:** Acquire the **NBA Tracking Data (2015-16)** from HuggingFace:
 [HuggingFace Dataset Link](https://huggingface.co/datasets/dcayton/nba_tracking_data_15_16?)

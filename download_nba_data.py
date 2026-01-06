@@ -50,8 +50,8 @@ def save_dataset_to_disk(dataset):
             if (i + 1) % 500 == 0:
                 print(f"  Saved {i + 1} records...")
     
-    print(f"✓ JSON saved successfully: {len(dataset)} records ({os.path.getsize(json_path) / 1024 / 1024:.2f} MB)")
-    print(f"✓ Format: JSONL (one JSON object per line)")
+    print(f"JSON saved successfully: {len(dataset)} records ({os.path.getsize(json_path) / 1024 / 1024:.2f} MB)")
+    print(f"Format: JSONL (one JSON object per line)")
 
 # Load the dataset
 dataset = load_sportvu_dataset()

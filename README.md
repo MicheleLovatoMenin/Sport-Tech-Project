@@ -64,6 +64,8 @@ The core virtualization takes place in **Blender** using the `rule_based_blend.p
 
 ## Installation
 
+Clone the repository.
+
 ### Prerequisites
 * **Python 3.8+**
 * **Blender 4.2** (This specific version is only needed if you wish to use GenMM)
@@ -74,10 +76,11 @@ The core virtualization takes place in **Blender** using the `rule_based_blend.p
     ```
 * **Directory:**
 For each file that is launched in Blender (`rule_based_blend.py`), you must manually modify the base directory (BASE_PATH).
+* In order to correctly visualize the frontend, you must install the VS Code extension `ritwickdey.liveserver`.
 
 ### Environment Setup
 
-Since the environment islarge, download and extract the zip file from [this link](https://drive.google.com/drive/folders/1UczKODgQ8h20t5PpQkrsuZZdyJOSg_bn?usp=sharing) and place the “basket_environment.blend” environment in the root of the project.
+Since the environment is large, download and extract the zip file from [this link](https://drive.google.com/drive/folders/1UczKODgQ8h20t5PpQkrsuZZdyJOSg_bn?usp=sharing) and place the “basket_environment.blend” environment in the root of the project.
 
 ### Dataset Setup
 **Download Data:** Acquire the **NBA Tracking Data (2015-16)** from HuggingFace:
@@ -103,7 +106,7 @@ To explore the interactive dashboard and view previously reconstructed shots:
 
 3.  **Access the Dashboard:**
    
-    Open your browser to `https://127.0.0.1:5500/frontend.html` (or the port specified in the terminal). You will see a 2D view of the court. Markers indicate shot locations: **X** (Missed) and **O** (Made). Use the dropdown menu to filter shots by Player, Team, or Game ID. Click on any marker to load the **360° interactive 3D viewer** for that specific action.
+To open the frontend in your browser, open the script frontend.py, right-click and select `Open with Live Server`. You will see a 2D view of the court. Markers indicate shot locations: **X** (Missed) and **O** (Made). Use the dropdown menu to filter shots by Player, Team, or Game ID. Click on any marker to load the **360° interactive 3D viewer** for that specific action.
 
 
 
@@ -117,20 +120,23 @@ https://github.com/user-attachments/assets/cd6da438-a2dd-444a-a16a-7b0fa5bc5f7e
 
 
 ### Developer Mode
-To reconstruct a new action from raw data, follow this pipeline:
+
+After ensuring that the shot you want to view is a 3-point shot (for example, by looking inside the dataset to see which shots are labelled as `3PT`), you can reconstruct a new 3-point action from raw data, follow this pipeline:
 
 #### Step A: Data Extraction
 Run the extraction script on python to identify the shot frame and isolate tracking data selecting game_id and event_id. Here there is an example:
 ```bash
-python shot_frame.py --game_id 0021500333 --event_id 179
+python shot_frame.py --game_id 0021500230 --event_id 479
 ```
+
+
 
 * **Robust Fallback (`shot_frame_adj.py`):**
     Use this script when the action data is misaligned (e.g., the "3pt shot" label appears at event index 189, but the actual data is at 188).
     * *Why should I use it?* Sometimes the dataset's possession label is incorrect for the specific frame.
     * *How it works:* Unlike the standard script which looks for the shooter among the 5 offensive players, this script scans **all 10 players** on the court. It identifies the shooter based on proximity to the ball, ensuring the correct player is selected even if the possession data is flawed.
 ```bash
-python shot_frame_adj.py --game_id 0021500333 --event_id 179
+python shot_frame_adj.py --game_id 0021500230 --event_id 479
 ```
 
 **Output:** Both scripts update `shot_metadata.json` (current action data) and append the result to `shots_data.json` (historical database).
@@ -161,7 +167,7 @@ Once the base animation is arranged in Blender, proceed with the manual export u
   * [x] Sampling Animations
   * [ ] Optimize Animations *(Unchecked)*
 
-4. Enter the filename using the strict format `game_id-event_id.glb` (e.g., `0021500333-179.glb`) and select the destination folder.
+4. Enter the filename using the strict format `game_id-event_id.glb` (e.g., `0021500230-479.glb`) and select the destination folder.
 
     **Important**: The filename must match the `game_id-event_id` pattern exactly. If named differently, the backend will not be able to link the 3D file to the database entry.
 
@@ -196,6 +202,7 @@ This directory contains tools to validate the raw SportVu data against our 3D re
 These scripts were used to build the foundational Blender environment (`basket_environment.blend`) and can be used to regenerate or modify the scene.
 
 * In Blender navigate to **File > Import > FBX (.fbx) > select the `X_Bot.fbx` file**.
+* Apply the retargeting tool using [**Rokoko addon**](https://support.rokoko.com/hc/en-us/articles/4410463481489-Retarget-an-animation-in-Blender). The first one has to be done manually.
 * **`setup_in_place.py`:** Batch loads the MOCAP animation library into Blender, configuring them as "in-place" animations ready for the rule-based logic.
 * **`setup_in_place2.py`:** Similar to the first script, but with a new batch of MOCAP animations. 
 * **`environment_creation.py`:** Procedurally generates the 3D environment, including the basketball court geometry, ball object initialization, and global scaling factors.
@@ -210,6 +217,11 @@ The smoothing algorithm utilizes **Generative Motion Matching** to ensure realis
 > **Li, W., Chen, X., Li, P., Sorkine-Hornung, O., & Chen, B. (2023).**
 > *Example-based motion synthesis via generative motion matching.*
 > ACM Transactions on Graphics (TOG), 42(4), 1-12.
+
+> **Donald, C., (2024).**
+> *NBA Tracking Data 2015-2016.*
+> [Hugging Face Datasets](https://huggingface.co/datasets/dcayton/nba_tracking_data_15_16).
+
 
 ---
 
